@@ -6,4 +6,5 @@ __pycache__
 *.pyc
 input_data
 output_data
-
+tests.py
+directions_parser.py
