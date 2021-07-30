@@ -669,3 +669,4 @@ if __name__ == "__main__":
 
     print(f"Dataset complete: {timestamp}")
     print(f"\t{results_dir}")
+    print(f"To set this as latest dataset: \n\t bash {base_dir}/set_latest.sh {release_name} {timestamp}")
