@@ -5,10 +5,17 @@ release=$1
 
 timestamp=$2
 
-prev=`cat ${HOME}/tuff_osm/geojsons/version.txt`
+prev=`cat ${HOME}/tuff_osm/latest/version.txt`
 
-mv ${HOME}/tuff_osm/geojsons ${HOME}/tuff_osm/previous/$prev
 
-cp -r ${HOME}/tuff_osm/output_data/$release/results/$timestamp/geojsons/ ${HOME}/tuff_osm/geojsons
+mkdir -p ${HOME}/tuff_osm/previous/$prev
 
-echo ${release}_${timestamp} > ${HOME}/tuff_osm/geojsons/version.txt
+cp -r ${HOME}/tuff_osm/latest/* ${HOME}/tuff_osm/previous/$prev/
+
+rm -r ${HOME}/tuff_osm/latest/*
+
+cp -r ${HOME}/tuff_osm/output_data/$release/results/$timestamp/geojsons ${HOME}/tuff_osm/latest/
+
+cp ${HOME}/tuff_osm/output_data/$release/results/$timestamp/combined.geojson ${HOME}/tuff_osm/latest/combined.geojson
+
+echo ${release}_${timestamp} > ${HOME}/tuff_osm/latest/version.txt
