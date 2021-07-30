@@ -34,7 +34,7 @@ from selenium import webdriver
 mode = "parallel"
 # mode = "serial"
 
-max_workers = 11
+max_workers = 59
 
 # base_dir = "/home/userw/Desktop/tuff_osm"
 base_dir = "/sciclone/home20/smgoodman/tuff_osm"
@@ -167,34 +167,6 @@ def get_from_overpass(osm_id, osm_type, api):
 
 
 
-def get_svg_path(url, driver=None):
-    """Get SVG path data from leaflet map at specified url
-
-    Only specifically tested using OpenStreetMap 'directions' results
-    """
-
-    # time.sleep(3)
-    driver.get(url)
-    time.sleep(3)
-
-    timeout = 30
-    timer = 0
-    d = None
-    while not d:
-        soup = BS(driver.page_source, "html.parser")
-        try:
-            d = soup.find("path", {"class": "leaflet-interactive"})["d"]
-        except:
-            if timer >= timeout:
-                raise Exception("Timeout exceeded waiting for page to load")
-            else:
-                time.sleep(1)
-                timer += 1
-
-    # driver.quit()
-    return d
-
-
 def calculate_unit_size(start, end, first, last):
     """Calculate the size of an arbitrary geospatial unit in terms of decimal degrees
 
@@ -216,7 +188,7 @@ def calculate_unit_size(start, end, first, last):
     return lon_unit_val, lat_unit_val
 
 
-def build_directions_geom(d):
+def build_directions_geom(url, d):
     """Build a shapely LineString from the SVG path data in the url
     """
     # get the svg path data
@@ -329,7 +301,7 @@ def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path):
     print(unique_id, osm_type)
     if osm_type == "directions":
         # feat = build_directions_geom(clean_link, driver)
-        feat = build_directions_geom(svg_path)
+        feat = build_directions_geom(clean_link, svg_path)
     elif osm_type == "node":
         feat, _ = get_node(clean_link)
     elif osm_type == "way":
@@ -401,6 +373,30 @@ def run_tasks(func, flist, mode, max_workers=None, chunksize=1):
     return results
 
 
+def get_svg_path(url, driver=None):
+    """Get SVG path data from leaflet map at specified url
+
+    Only specifically tested using OpenStreetMap 'directions' results
+    """
+    print(url)
+    driver.get(url)
+    max_attempts = 10
+    attempts = 0
+    d = None
+    while not d:
+        time.sleep(2)
+        print(attempts)
+        soup = BS(driver.page_source, "html.parser")
+        try:
+            d = soup.find("path", {"class": "leaflet-interactive"})["d"]
+        except:
+            if attempts >= max_attempts:
+                raise Exception("max_attempts exceeded waiting for page to load")
+            else:
+                attempts += 1
+    return d
+
+
 # =============================================================================
 
 
@@ -468,32 +464,6 @@ if __name__ == "__main__":
 
 
 
-    # chromedriver_path = "/sciclone/home20/smgoodman/tuff_osm/chromedriver"
-    # options = webdriver.ChromeOptions()
-    # options.binary_location = "/sciclone/home20/smgoodman/tuff_osm/chrome-linux/chrome"
-    # options.headless = True
-    # driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
-
-    # geckodriver_path = "/home/userw/Desktop/tuff_osm/geckodriver"
-    geckodriver_path = "/sciclone/home20/smgoodman/tuff_osm/geckodriver"
-    options = webdriver.FirefoxOptions()
-    options.headless = True
-    profile = webdriver.FirefoxProfile()
-    profile.accept_untrusted_certs = True
-    # options.binary_location = "/home/userw/Desktop/tuff_osm/firefox/firefox"
-    options.binary_location = "/sciclone/home20/smgoodman/tuff_osm/firefox/firefox-bin"
-
-    # import random
-    # if mode == "parallel":
-    #     sleep_val = random.randint(0, max_workers)
-    #     print(f"Sleeping for {sleep_val} seconds before starting...")
-    #     time.sleep(sleep_val)
-
-    driver = webdriver.Firefox(executable_path=geckodriver_path, options=options, firefox_profile=profile)
-
-    driver.set_window_size(1920*10, 1080*10)
-
-
     feature_df_list = []
     for ix, (_, row) in enumerate(filtered_df.iterrows()):
         # if ix < 170: continue
@@ -531,11 +501,44 @@ if __name__ == "__main__":
     feature_df["unique_id"] = range(len(feature_df))
 
     # #
-    error_list = [53541, 52518, 40359, 39370, 32153, 61166, 33488, 53522, 39001, 33402, 46364]
-    feature_df = feature_df.loc[feature_df.tuff_id.isin(error_list)].copy(deep=True)
+    # error_list = [53541, 52518, 40359, 39370, 32153, 61166, 33488, 53522, 39001, 33402, 46364]
+    # feature_df = feature_df.loc[feature_df.tuff_id.isin(error_list)].copy(deep=True)
     # #
 
-    feature_df.loc[feature_df.osm_type == "directions", "svg_path"] = feature_df.loc[feature_df.osm_type == "directions"].clean_link.apply(lambda x: get_svg_path(x, driver))
+    feature_df = feature_df.loc[feature_df.osm_type != "directions"].copy(deep=True)
+
+    if "directions" in set(feature_df.osm_type):
+
+        # chromedriver_path = "/sciclone/home20/smgoodman/tuff_osm/chromedriver"
+        # options = webdriver.ChromeOptions()
+        # options.binary_location = "/sciclone/home20/smgoodman/tuff_osm/chrome-linux/chrome"
+        # options.headless = True
+        # driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
+
+        # geckodriver_path = "/home/userw/Desktop/tuff_osm/geckodriver"
+        geckodriver_path = "/sciclone/home20/smgoodman/tuff_osm/geckodriver"
+        options = webdriver.FirefoxOptions()
+        options.headless = True
+        profile = webdriver.FirefoxProfile()
+        profile.accept_untrusted_certs = True
+        # options.binary_location = "/home/userw/Desktop/tuff_osm/firefox/firefox"
+        options.binary_location = "/sciclone/home20/smgoodman/tuff_osm/firefox/firefox-bin"
+
+        # import random
+        # if mode == "parallel":
+        #     sleep_val = random.randint(0, max_workers)
+        #     print(f"Sleeping for {sleep_val} seconds before starting...")
+        #     time.sleep(sleep_val)
+
+        driver = webdriver.Firefox(executable_path=geckodriver_path, options=options, firefox_profile=profile)
+
+        driver.set_window_size(1920*10, 1080*10)
+
+
+        feature_df.loc[feature_df.osm_type == "directions", "svg_path"] = feature_df.loc[feature_df.osm_type == "directions"].clean_link.apply(lambda x: get_svg_path(x, driver))
+
+        driver.quit()
+
 
     feature_df_path = os.path.join(results_dir, "feature_df.csv")
     feature_df.to_csv(feature_df_path, index=False)
@@ -550,13 +553,13 @@ if __name__ == "__main__":
     # feature_df = feature_df[3600:3650].copy(deep=True)
     # |||||||||||||||||||||
 
-    feature_df = feature_df.loc[feature_df.osm_type != "directions"].copy(deep=True)
+    # feature_df = feature_df.loc[feature_df.osm_type != "directions"].copy(deep=True)
 
 
-    # get_osm_feat for each row in feature_df
-    #     - parallelize
-    #     - buffer lines/points
-    #     - convert all features to multipolygons
+        # get_osm_feat for each row in feature_df
+        #     - parallelize
+        #     - buffer lines/points
+        #     - convert all features to multipolygons
 
     # generate list of tasks to iterate over
     flist = list(zip(
@@ -605,19 +608,26 @@ if __name__ == "__main__":
 
 
     # output results to csv
-    output_path = os.path.join(results_dir, "results_df.csv")
-    output_df[[i for i in output_df.columns if i != "feature"]].to_csv(output_path, index=False)
+    output_simple_path = os.path.join(results_dir, "results_df.csv")
+    output_df[[i for i in output_df.columns if i != "feature"]].to_csv(output_simple_path, index=False)
+
+    output_path = os.path.join(results_dir, "results_features_df.csv")
+    output_df.to_csv(output_path, index=False)
 
 
     # -------------------------------------
     # -------------------------------------
+
+    invalid_tuff_id_list = list(set(output_df.loc[output_df.status == 1].tuff_id))
+
+    valid_df = output_df.loc[~output_df.tuff_id.isin(invalid_tuff_id_list)].copy(deep=True)
 
     print("Building GeoJSONs")
 
     # combine features for each project
     #    - iterate over all polygons (p) within feature multipolygons (mp) to create single multipolygon per project
 
-    grouped_df = output_df.groupby("tuff_id")["feature"].apply(list).reset_index(name="feature_list")
+    grouped_df = valid_df.groupby("tuff_id")["feature"].apply(list).reset_index(name="feature_list")
     # for group in grouped_df:
     #     group_mp = MultiPolygon([p for mp in group.feature for p in mp]).__geo_interface_
     # move this to apply instead of loop so we can have a final df to output results/errors to
@@ -640,7 +650,9 @@ if __name__ == "__main__":
         output_single_feature_geojson(geom, props, path)
 
 
-    grouped_df.apply(lambda x: build_feature(x), axis=1)
+    for ix, row in grouped_df.iterrows():
+        build_feature(row)
+
 
 
     # combine all MultiPolygons into one GeoJSON
