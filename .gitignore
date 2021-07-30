@@ -1,0 +1,8 @@
+chrome*
+geckodriver*
+*firefox*
+__pycache__
+*.pyc
+input_data
+output_data
+
