@@ -44,11 +44,14 @@ id_field = "AidData Tuff Project ID"
 location_field = "Geographic Location"
 
 
-release_name = "test"
-input_csv_name = "tuff_osm_test.csv"
+# release_name = "test"
+# input_csv_name = "tuff_osm_test.csv"
 
-release_name = "2.0prerelease"
-input_csv_name = "ChineseOfficialFinance2.0_PreliminaryDataset_July222021.csv"
+# release_name = "2.0prerelease"
+# input_csv_name = "ChineseOfficialFinance2.0_PreliminaryDataset_July222021.csv"
+
+release_name = "prerelease_20210730"
+input_csv_name = "exportforseth.csv"
 
 # -----------------
 
