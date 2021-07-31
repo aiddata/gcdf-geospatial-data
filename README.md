@@ -9,7 +9,7 @@ General To Do:
 - [] Finalize repo
 - [] Add license?
 - [] Add input data so results are fully replicable?
-
+- [] Finish full build with osm-directions links
 
 ## Non-technical Data Description
 
@@ -23,6 +23,7 @@ Links to data usage guides, examples, related material
 
 
 Development To Do:
+- [] Bash script to merge geojsons from multiple runs? (e.g., run non-directions links, then run directions link; or rerun only failed/updated links without require full build)
 - [] Improve "directions" feature extraction which currently relies on serial parsing of the map using Selenium (not thread safe). Can potentially rebuild routing API queries directly
 - [] Add output from processing which can be used to notify when primary OSM feature from link was deleted and old version had to be used
 - [] Move functions to separate class (Possibly make a generalized OSM extraction tool. This may not work well without hurting our ability to parallelize efficiently - will need to explore further once first version is stable.)
