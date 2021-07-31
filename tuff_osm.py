@@ -508,7 +508,7 @@ if __name__ == "__main__":
     # feature_df = feature_df.loc[feature_df.tuff_id.isin(error_list)].copy(deep=True)
     # #
 
-    feature_df = feature_df.loc[feature_df.osm_type != "directions"].copy(deep=True)
+    # feature_df = feature_df.loc[feature_df.osm_type != "directions"].copy(deep=True)
 
     if "directions" in set(feature_df.osm_type):
 
