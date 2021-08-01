@@ -381,14 +381,12 @@ def get_svg_path(url, driver=None):
 
     Only specifically tested using OpenStreetMap 'directions' results
     """
-    print(url)
     driver.get(url)
     max_attempts = 10
     attempts = 0
     d = None
     while not d:
-        time.sleep(2)
-        print(attempts)
+        time.sleep(3)
         soup = BS(driver.page_source, "html.parser")
         try:
             d = soup.find("path", {"class": "leaflet-interactive"})["d"]
@@ -415,102 +413,105 @@ if __name__ == "__main__":
     results_dir = os.path.join(output_dir, "results", timestamp)
     os.makedirs(os.path.join(results_dir, "geojsons"), exist_ok=True)
 
-    raw_df = pd.read_csv(input_csv_path)
-    loc_df = raw_df[[id_field, location_field]].copy(deep=True)
-    loc_df.columns = ["id", "location"]
 
-    loc_df_not_null = loc_df.loc[~loc_df.location.isnull()]
-    osm_df = loc_df_not_null.loc[loc_df_not_null.location.str.contains(osm_str)].copy()
+    # from_existing = False
+    from_existing = os.path.join(base_dir, "output_data/prerelease_20210730/results/2021_07_31_16_40/feature_df.csv")
 
-
-    osm_df["osm_list"] = osm_df.location.apply(lambda x: extract_links_from_text(x, osm_str))
+    if from_existing:
+        feature_df = pd.read_csv(from_existing)
 
 
-    # save dataframe with osm links to csv
-    osm_df.to_csv(os.path.join(results_dir, "osm_links_df.csv"), index=False, encoding="utf-8")
+    else:
 
-    invalid_str_list = ["search", "query"]
-    errors_df = osm_df[osm_df.osm_list.apply(lambda x: any(i in str(x) for i in invalid_str_list))].copy(deep=True)
-    errors_df.to_csv(os.path.join(results_dir, "osm_error_df.csv"), index=False, encoding="utf-8")
+        raw_df = pd.read_csv(input_csv_path)
+        loc_df = raw_df[[id_field, location_field]].copy(deep=True)
+        loc_df.columns = ["id", "location"]
 
-    filtered_df = osm_df.loc[~osm_df.index.isin(errors_df.index)].copy(deep=True)
-
-
-    print("{} out of {} projects contain OSM link(s)".format(len(osm_df), len(raw_df)))
-
-    print("{} out of {} projects with OSM link(s) had at least 1 non-parseable link ({} valid)".format(len(errors_df), len(osm_df), len(filtered_df)))
-
-    """
-    # directions link validation
-
-    directions_df = osm_df[osm_df.osm_list.apply(lambda x: any(i in str(x) for i in ["directions"]))].copy(deep=True)
-    directions_links = [j for i in directions_df.osm_list for j in i if "directions" in j]
-    assert len(directions_links) == sum(["&route=" in i for i in directions_links])
-
-    # list of coords in format: '<start_lon>%2C<start_lat>%3B<end_lon>%2C<end_lat>'
-    # example: '0.1673%2C35.1329%3B0.1054%2C35.0865'
-    raw_coords_list = [i.split("&route=")[1].split("#map=")[0] for i in directions_links]
-
-    assert 0 == sum([len(i.split("%3B")) != 2 for i in raw_coords_list])
-    """
-
-    """
-    # temporary for testing
-
-    node_list = [j for i in osm_df["osm_list"].to_list() for j in i if "node" in str(j)]
-    way_list = [j for i in osm_df["osm_list"].to_list() for j in i if "way" in str(j)]
-    relation_list = [j for i in osm_df["osm_list"].to_list() for j in i if "relation" in str(j)]
-    directions_list = [j for i in osm_df["osm_list"].to_list() for j in i if "directions" in str(j)]
-    search_list = [j for i in osm_df["osm_list"].to_list() for j in i if "search" in str(j)]
-    query_list = [j for i in osm_df["osm_list"].to_list() for j in i if "query" in str(j)]
-    """
+        loc_df_not_null = loc_df.loc[~loc_df.location.isnull()]
+        osm_df = loc_df_not_null.loc[loc_df_not_null.location.str.contains(osm_str)].copy()
 
 
-
-    feature_df_list = []
-    for ix, (_, row) in enumerate(filtered_df.iterrows()):
-        # if ix < 170: continue
-        tuff_id = row["id"]
-        print(tuff_id)
-        osm_links = row["osm_list"]
-        # iterate over each osm link for a way
-        for link in osm_links:
-            osm_id = None
-            svg_path = None
-            try:
-                # extract if link is for a way, node, relation, directions
-                osm_type = link.split("/")[3].split("?")[0]
-                if osm_type == "directions":
-                    osm_id = None
-                    clean_link = link.split("#map=")[0]
-                    clean_link = clean_link[clean_link.index("http"):]
-                    while not clean_link[-1].isdigit():
-                        clean_link = clean_link[:-1]
-                elif osm_type in ["node", "way", "relation"]:
-                    # extract the osm id for the way/node/relation from the url
-                    #   (gets rid of an extra stuff after the id as well)
-                    # osm_id = link.split("/")[4].split("#")[0].split(".")[0]
-                    osm_id = re.match("([0-9]*)", link.split("/")[4]).groups()[0]
-                    # rebuild a clean link
-                    clean_link = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
-                print(f"\t{osm_type} {osm_id}")
-                feature_df_list.append([tuff_id, clean_link, osm_type, osm_id, svg_path])
-            except Exception as e:
-                print(f"\tError: {link}")
-                print("\t", e)
+        osm_df["osm_list"] = osm_df.location.apply(lambda x: extract_links_from_text(x, osm_str))
 
 
-    feature_df = pd.DataFrame(feature_df_list, columns=["tuff_id", "clean_link", "osm_type", "osm_id", "svg_path"])
-    feature_df["unique_id"] = range(len(feature_df))
+        # save dataframe with osm links to csv
+        osm_df.to_csv(os.path.join(results_dir, "osm_links_df.csv"), index=False, encoding="utf-8")
 
-    # #
-    # error_list = [53541, 52518, 40359, 39370, 32153, 61166, 33488, 53522, 39001, 33402, 46364]
-    # feature_df = feature_df.loc[feature_df.tuff_id.isin(error_list)].copy(deep=True)
-    # #
+        invalid_str_list = ["search", "query"]
+        errors_df = osm_df[osm_df.osm_list.apply(lambda x: any(i in str(x) for i in invalid_str_list))].copy(deep=True)
+        errors_df.to_csv(os.path.join(results_dir, "osm_error_df.csv"), index=False, encoding="utf-8")
 
-    # feature_df = feature_df.loc[feature_df.osm_type != "directions"].copy(deep=True)
+        filtered_df = osm_df.loc[~osm_df.index.isin(errors_df.index)].copy(deep=True)
 
-    if "directions" in set(feature_df.osm_type):
+
+        print("{} out of {} projects contain OSM link(s)".format(len(osm_df), len(raw_df)))
+
+        print("{} out of {} projects with OSM link(s) had at least 1 non-parseable link ({} valid)".format(len(errors_df), len(osm_df), len(filtered_df)))
+
+        """
+        # directions link validation
+
+        directions_df = osm_df[osm_df.osm_list.apply(lambda x: any(i in str(x) for i in ["directions"]))].copy(deep=True)
+        directions_links = [j for i in directions_df.osm_list for j in i if "directions" in j]
+        assert len(directions_links) == sum(["&route=" in i for i in directions_links])
+
+        # list of coords in format: '<start_lon>%2C<start_lat>%3B<end_lon>%2C<end_lat>'
+        # example: '0.1673%2C35.1329%3B0.1054%2C35.0865'
+        raw_coords_list = [i.split("&route=")[1].split("#map=")[0] for i in directions_links]
+
+        assert 0 == sum([len(i.split("%3B")) != 2 for i in raw_coords_list])
+        """
+
+        """
+        # temporary for testing
+
+        node_list = [j for i in osm_df["osm_list"].to_list() for j in i if "node" in str(j)]
+        way_list = [j for i in osm_df["osm_list"].to_list() for j in i if "way" in str(j)]
+        relation_list = [j for i in osm_df["osm_list"].to_list() for j in i if "relation" in str(j)]
+        directions_list = [j for i in osm_df["osm_list"].to_list() for j in i if "directions" in str(j)]
+        search_list = [j for i in osm_df["osm_list"].to_list() for j in i if "search" in str(j)]
+        query_list = [j for i in osm_df["osm_list"].to_list() for j in i if "query" in str(j)]
+        """
+
+        tmp_feature_df_list = []
+        for ix, (_, row) in enumerate(filtered_df.iterrows()):
+            # if ix < 170: continue
+            tuff_id = row["id"]
+            print(tuff_id)
+            osm_links = row["osm_list"]
+            # iterate over each osm link for a way
+            for link in osm_links:
+                osm_id = None
+                svg_path = None
+                try:
+                    # extract if link is for a way, node, relation, directions
+                    osm_type = link.split("/")[3].split("?")[0]
+                    if osm_type == "directions":
+                        osm_id = None
+                        clean_link = link.split("#map=")[0]
+                        clean_link = clean_link[clean_link.index("http"):]
+                        while not clean_link[-1].isdigit():
+                            clean_link = clean_link[:-1]
+                    elif osm_type in ["node", "way", "relation"]:
+                        # extract the osm id for the way/node/relation from the url
+                        #   (gets rid of an extra stuff after the id as well)
+                        # osm_id = link.split("/")[4].split("#")[0].split(".")[0]
+                        osm_id = re.match("([0-9]*)", link.split("/")[4]).groups()[0]
+                        # rebuild a clean link
+                        clean_link = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
+                    print(f"\t{osm_type} {osm_id}")
+                    tmp_feature_df_list.append([tuff_id, clean_link, osm_type, osm_id, svg_path])
+                except Exception as e:
+                    print(f"\tError: {link}")
+                    print("\t", e)
+
+
+        feature_df = pd.DataFrame(tmp_feature_df_list, columns=["tuff_id", "clean_link", "osm_type", "osm_id", "svg_path"])
+        feature_df["unique_id"] = range(len(feature_df))
+
+
+
+    if "directions" in set(feature_df.loc[feature_df.svg_path.isnull(), "osm_type"]):
 
         # chromedriver_path = "/sciclone/home20/smgoodman/tuff_osm/chromedriver"
         # options = webdriver.ChromeOptions()
@@ -538,13 +539,25 @@ if __name__ == "__main__":
         driver.set_window_size(1920*10, 1080*10)
 
 
-        feature_df.loc[feature_df.osm_type == "directions", "svg_path"] = feature_df.loc[feature_df.osm_type == "directions"].clean_link.apply(lambda x: get_svg_path(x, driver))
+        for ix, row in feature_df.loc[feature_df.osm_type == "directions"].iterrows():
+            print(row.clean_link)
+            d = None
+            attempts = 0
+            max_attempts = 5
+            while not d and attempts < max_attempts:
+                attempts += 1
+                try:
+                    d = get_svg_path(row.clean_link, driver)
+                except Exception as e:
+                    print(f"\tAttempt {attempts}/{max_attempts}", repr(e))
+            feature_df.loc[ix, "svg_path"] = d
 
         driver.quit()
 
 
     feature_df_path = os.path.join(results_dir, "feature_df.csv")
     feature_df.to_csv(feature_df_path, index=False)
+
 
     # |||||||||||||||||||||
     # TESTING SUBSET
@@ -579,8 +592,11 @@ if __name__ == "__main__":
 
     print("Running feature generation")
 
-    results = run_tasks(get_osm_feat, flist, mode, max_workers=max_workers, chunksize=1)
+    # results = []
+    # for result in run_tasks(get_osm_feat, flist, mode, max_workers=max_workers, chunksize=1, unordered=True):
+    #     results.append(result)
 
+    results = run_tasks(get_osm_feat, flist, mode, max_workers=max_workers, chunksize=1)
 
     print("Completed feature generation")
 
@@ -670,3 +686,4 @@ if __name__ == "__main__":
     print(f"Dataset complete: {timestamp}")
     print(f"\t{results_dir}")
     print(f"To set this as latest dataset: \n\t bash {base_dir}/set_latest.sh {release_name} {timestamp}")
+
