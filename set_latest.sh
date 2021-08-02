@@ -16,6 +16,6 @@ rm -r ${HOME}/tuff_osm/latest/*
 
 cp -r ${HOME}/tuff_osm/output_data/$release/results/$timestamp/geojsons ${HOME}/tuff_osm/latest/
 
-zip --junk-paths ${HOME}/tuff_osm/latest/combined.geojson.zip ${HOME}/tuff_osm/output_data/$release/results/$timestamp/combined.geojson 
+zip --junk-paths - ${HOME}/tuff_osm/output_data/$release/results/$timestamp/combined.geojson > ${HOME}/tuff_osm/latest/combined.geojson.zip 
 
 echo ${release}_${timestamp} > ${HOME}/tuff_osm/latest/version.txt
