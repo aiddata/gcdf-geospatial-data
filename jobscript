@@ -1,5 +1,5 @@
 #!/bin/tcsh
-#PBS -N asg:tuff_osm
+#PBS -N tuff_osm
 #PBS -l nodes=8:c18a:ppn=12
 #PBS -l walltime=48:00:00
 #PBS -j oe
