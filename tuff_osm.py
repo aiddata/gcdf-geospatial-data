@@ -237,11 +237,11 @@ def build_directions_geom(url, d):
     return feat
 
 
-def write_json_to_file(json_dict, path):
+def write_json_to_file(json_dict, path, **kwargs):
     """Write a valid JSON formatted dictionary to a file
     """
     file = open(path, "w")
-    json.dump(json_dict, file, indent=4)
+    json.dump(json_dict, file, **kwargs)
     file.close()
 
 
