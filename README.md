@@ -1,9 +1,11 @@
 # China OSM Geodata
 
-Description of repo, China finance data, links to AidData, etc.
+Description of repo, China finance data, links to [AidData](https://www.aiddata.org/), etc.
+
+To download the latest data, click [HERE](https://github.com/aiddata/china-osm-geodata/blob/master/README.md) -- placeholder link
 
 
-## Non-technical Data Description
+## Description
 
 Information about data, structure, etc
 
@@ -11,14 +13,22 @@ Links to data usage guides, examples, related material
 
 
 
-## Technical Description
-
-code, data, etc.
-
-
 ## Contributing
 
-guidelines, etc
+Whether you have questions about usage, discover a bug, or just want to engage with others using the data, there is a place for you!
+
+[GitHub Discussions](https://github.com/aiddata/china-osm-geodata/discussions) are a great place to ask questions, see what others are talking about, and share research, applications, and ideas. If you'd prefer to get involved in more technical aspects, want to suggest improvements, discover a bug in the code, or run into issues with the data, then please utilize [GitHub's Issues](https://github.com/aiddata/china-osm-geodata/issues).
+
+
+
+## Replication
+
+At AidData we believe in transparency and making our work replicable. In this section we provide all the steps necessary to replicate the complete workflow used to produce the data in this repository.
+
+
+### Technical Overview
+
+design / approach, stack used, code overview, data sources / apis, etc.
 
 
 
@@ -66,3 +76,7 @@ unzip chromedriver_linux64.zip
 Notes:
 - If you are using Chrome you will need to edit the Python code to initiate the Selenium webdriver with Chrome instead of Firefox.
     - Some components to do this are commented out in the code, but they are not likely complete and not tested.
+
+## Run Code
+
+1. To Do
