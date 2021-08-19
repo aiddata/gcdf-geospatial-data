@@ -7,6 +7,7 @@ OSM features are identified as either relations, ways, or nodes (OSM directions 
 
 """
 
+import sys
 import os
 import re
 import time
@@ -28,70 +29,102 @@ import osm2geojson
 
 from selenium import webdriver
 
-# -----------------
-# user variables
-
-mode = "parallel"
-# mode = "serial"
-
-max_workers = 59
-
-# base_dir = "/home/userw/Desktop/tuff_osm"
-base_dir = "/sciclone/home20/smgoodman/tuff_osm"
+import configparser
 
 
-id_field = "AidData Tuff Project ID"
-location_field = "Geographic Location"
+# ensure correct working directory when running as a batch parallel job
+# in all other cases user should already be in project directory
+if hasattr(sys, 'ps1'):
+    os.chdir(os.path.dirname(__file__))
+
+# read config file
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+mode = config["main"]["mode"]
+max_workers = config["main"]["max_workers"]
+release_name = config["main"]["release_name"]
+input_csv_name = config["main"]["input_csv_name"]
 
 
-# release_name = "test"
-# input_csv_name = "tuff_osm_test.csv"
+# define core variables
 
-# release_name = "2.0prerelease"
-# input_csv_name = "ChineseOfficialFinance2.0_PreliminaryDataset_July222021.csv"
-
-release_name = "prerelease_20210730"
-input_csv_name = "exportforseth.csv"
-
-# -----------------
-
-osm_str = "https://www.openstreetmap.org/"
+# artifact from when working dir was manually specified
+base_dir = "."
 
 input_csv_path = os.path.join(base_dir, "input_data", release_name, input_csv_name)
 
+# fields from input csv
+id_field = "AidData Tuff Project ID"
+location_field = "Geographic Location"
+
+# search string used to identify relevant OSM link within the location_field of input csv
+osm_str = "https://www.openstreetmap.org/"
+
 output_dir = os.path.join(base_dir, "output_data", release_name)
 
+# initialize overpass api on all processes
+api = overpass.API(timeout=600)
 
-
-# =====================================
 
 
 def get_current_timestamp(format_str=None):
+    """Get the current timestamp
+
+    Args:
+        format_str (str, optional): string to format timestamp
+
+    Returns:
+        str: string formatted timestamp
+    """
     if format_str is None:
         format_str = '%Y_%m_%d_%H_%M'
     timestamp = datetime.datetime.fromtimestamp(int(time.time())).strftime(format_str)
     return timestamp
 
 
-def extract_links_from_text(text, match):
-    link_list = [i for i in text.split(" ") if match in i]
+def split_and_match_text(text, split, match):
+    """Split a string and return matching elements
+
+    Args:
+        text (str): string to split and match
+        split (str): string to split text on
+        match (str): string to match split elements against
+
+    Returns:
+        list: list of matching elements
+    """
+    link_list = [i for i in text.split(split) if match in i]
     return link_list
 
 
-def get_soup(url, pretty_print=False):
+def get_soup(url, pretty_print=False, timeout=60):
     """Extract a parseable representation of a web page
+
+    Will sleep and attempt to retry for a set amount of time if request fails to complete
+
+    Args:
+        url (str): url of web page to extract parseable representation from
+        pretty_print (bool, optional): flag to enable pretty print of response
+        timeout (int, optional): number of seconds to wait for response before timing out
+
+    Returns:
+        bs4.BeautifulSoup: parseable representation of web page
+
+    Raises:
+        requests.exceptions.HTTPError: if response status code is not 200
+        requests.exceptions.Timeout: if request times out
     """
-    timeout = 60
     timer = 0
     page = None
     while not page or page.status_code != 200:
         try:
             page = requests.get(url)
             if page.status_code != 200:
-                raise Exception(f"Request failed - Status code: {page.status_code} - URL: {url}")
+                raise requests.exceptions.HTTPError(f"Request failed - Status code: {page.status_code} - URL: {url}")
         except:
             if timer >= timeout:
-                raise Exception(f"Timeout exceeded waiting for request ({url})")
+                raise requests.exceptions.Timeout(f"Timeout exceeded waiting for request ({url})")
             else:
                 time.sleep(2)
                 timer += 2
@@ -103,31 +136,51 @@ def get_soup(url, pretty_print=False):
 
 
 def get_node(clean_link):
-    """Manage getting node feature and coordinates from url
+    """Manage getting OSM node coordinates from OSM feature url
+
+    Uses historical version of node URL if current URL no longer exists
+
+    Args:
+        clean_link (str): url of OSM feature
+
+    Returns:
+        shapely.geometry.Point: point geometry of node
     """
     try:
         soup = get_soup(clean_link)
-        feat, coords = build_node_geom(soup)
+        feat = build_node_geom(soup)
     except Exception as e:
         print(f"\tusing old node version: {clean_link} \n\t\t {repr(e)}")
         soup = get_soup(clean_link+"/history")
-        feat, coords = build_node_geom(soup)
-    return feat, coords
+        feat = build_node_geom(soup)
+    return feat
 
 
 def build_node_geom(soup):
     """Recontruct node geometry
+
+    Args:
+        soup (bs4.BeautifulSoup): parseable representation of OSM feature page
+
+    Returns:
+        shapely.geometry.Point: point geometry of node
     """
     lon = soup.find("span", {"class":"longitude"}).text
     lat = soup.find("span", {"class":"latitude"}).text
     coords = [float(lon), float(lat)]
     # generate geojson compatible geometry string for feature
     feat = Point(coords)
-    return feat, coords
+    return feat
 
 
 def build_way_geom(soup):
     """Reconstruct a way geometry
+
+    Args:
+        soup (bs4.BeautifulSoup): parseable representation of OSM feature page
+
+    Returns:
+        shapely.geometry.LineString, shapely.geometry Polygon: line or polygon geometry of way
     """
     # get list of nodes from page
     nodes_html = soup.find_all('a', {'class': 'node'})
@@ -137,7 +190,8 @@ def build_way_geom(soup):
     for node in node_ids:
         # build url for specific node
         node_url = f"https://www.openstreetmap.org/node/{node}"
-        _, node_coords = get_node(node_url)
+        node_feat = get_node(node_url)
+        node_coords = node_feat.coords[0]
         coords.append(node_coords)
     # generate geojson compatible geometry string for feature
     #   - currently assumes they are either linestrings or polygons
@@ -152,6 +206,14 @@ def build_way_geom(soup):
 def get_from_overpass(osm_id, osm_type, api):
     """Query Overpass API and sleep if there are timeout related errors
     https://github.com/mvexel/overpass-api-python-wrapper/blob/cda548262d94f1f14dfd9c8ca21e369dd9254248/overpass/errors.py
+
+    Args:
+        osm_id (str): OSM id of feature to query
+        osm_type (str): OSM type of feature to query
+        api (overpass.API): Overpass API instance to use for queries
+
+    Returns:
+        overpas API query result
     """
     if osm_type == "relation":
         osm_type = "rel"
@@ -169,6 +231,36 @@ def get_from_overpass(osm_id, osm_type, api):
     return result
 
 
+def get_svg_path(url, driver, max_attempts=10):
+    """Get SVG path data from leaflet map at specified url
+
+    Only specifically tested using OpenStreetMap 'directions' results
+
+    Sleeps for a set amount of time if request fails to complete, until max attempts are reached
+
+    Args:
+        url (str): url of OSM directions page with leaflet map to extract path data from
+        driver (webdriver): Selenium webdriver instance to use for web requests
+        max_attempts (int, optional): number of times to attempt request before timing out
+
+    Returns:
+        str: SVG path element data
+    """
+    driver.get(url)
+    attempts = 0
+    d = None
+    while not d:
+        time.sleep(3)
+        soup = BS(driver.page_source, "html.parser")
+        try:
+            d = soup.find("path", {"class": "leaflet-interactive"})["d"]
+        except:
+            if attempts >= max_attempts:
+                raise Exception("max_attempts exceeded waiting for page to load")
+            else:
+                attempts += 1
+    return d
+
 
 def calculate_unit_size(start, end, first, last):
     """Calculate the size of an arbitrary geospatial unit in terms of decimal degrees
@@ -178,6 +270,15 @@ def calculate_unit_size(start, end, first, last):
 
     Examine difference between longitute and latitute for each pairing to
     determine value of 1 unit in decimal degrees for both longitude and latitude
+
+    Args:
+        start (tuple): start point coordinate pair (lon, lat)
+        end (tuple): end point coordinate pair (lon, lat)
+        first (tuple): first point pixel pair (x, y)
+        last (tuple): last point pixel pair (x, y)
+
+    Returns:
+        float, float: size of each pixel unit in decimal degrees for longitude and latitude
     """
     # absolute difference between starting and ending latitudes and longitudes in decimal degrees
     degree_diff_lat = abs(end[0] - start[0])
@@ -193,6 +294,13 @@ def calculate_unit_size(start, end, first, last):
 
 def build_directions_geom(url, d):
     """Build a shapely LineString from the SVG path data in the url
+
+    Args:
+        url (str): url of OSM directions page
+        d (str): SVG path element data
+
+    Returns:
+        shapely.geometry.LineString: line geometry of directions
     """
     # get the svg path data
     # d = None
@@ -239,6 +347,11 @@ def build_directions_geom(url, d):
 
 def write_json_to_file(json_dict, path, **kwargs):
     """Write a valid JSON formatted dictionary to a file
+
+    Args:
+        json_dict (dict): dictionary to write to file
+        path (str): path to write file to
+        **kwargs: additional keyword arguments to pass to json.dump
     """
     file = open(path, "w")
     json.dump(json_dict, file, **kwargs)
@@ -247,6 +360,11 @@ def write_json_to_file(json_dict, path, **kwargs):
 
 def output_single_feature_geojson(geom, props, path):
     """Output a geojson file containing a single feature
+
+    Args:
+        geom (shapely.geometry.base.BaseGeometry): geometry of feature
+        props (dict): dictionary of properties for feature
+        path (str): path to write file to
     """
     # build geojson format dictionary
     geojson_dict = {
@@ -264,6 +382,11 @@ def output_single_feature_geojson(geom, props, path):
 
 def output_multi_feature_geojson(geom_list, props_list, path):
     """Ouput a geojson file containing a multiple features
+
+    Args:
+        geom_list (list): list of geometry of features
+        props_list (list): list of dictionaries of properties for features
+        path (str): path to write file to
     """
     features = []
     for geom, props in zip(geom_list, props_list):
@@ -280,6 +403,14 @@ def output_multi_feature_geojson(geom_list, props_list, path):
 
 
 def convert_osm_feat_to_multipolygon(fn):
+    """Buffer a shapely geometry to create a Polygon if not already a Polygon or MultiPolygon
+
+    Args:
+        shapely.geometry.base.BaseGeometry: shapely geometry
+
+    Returns:
+        shapely.geometry.base.BaseGeometry: shapely Polygon or MultiPolygon
+    """
     @wraps(fn)
     def wrapper(*args, **kwargs):
         feat = fn(*args, **kwargs)
@@ -290,6 +421,14 @@ def convert_osm_feat_to_multipolygon(fn):
 
 
 def buffer_osm_feat(fn):
+    """Buffer a shapely geometry to create a Polygon if not already a Polygon or MultiPolygon
+
+    Args:
+        shapely.geometry.base.BaseGeometry: shapely geometry
+
+    Returns:
+        shapely.geometry.base.BaseGeometry: shapely Polygon or MultiPolygon
+    """
     @wraps(fn)
     def wrapper(*args, **kwargs):
         feat = fn(*args, **kwargs)
@@ -297,6 +436,7 @@ def buffer_osm_feat(fn):
             feat = feat.buffer(0.00001)
         return feat
     return wrapper
+
 
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
@@ -306,7 +446,7 @@ def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path):
         # feat = build_directions_geom(clean_link, driver)
         feat = build_directions_geom(clean_link, svg_path)
     elif osm_type == "node":
-        feat, _ = get_node(clean_link)
+        feat = get_node(clean_link)
     elif osm_type == "way":
         try:
             soup = get_soup(clean_link)
@@ -376,35 +516,6 @@ def run_tasks(func, flist, mode, max_workers=None, chunksize=1):
     return results
 
 
-def get_svg_path(url, driver=None):
-    """Get SVG path data from leaflet map at specified url
-
-    Only specifically tested using OpenStreetMap 'directions' results
-    """
-    driver.get(url)
-    max_attempts = 10
-    attempts = 0
-    d = None
-    while not d:
-        time.sleep(3)
-        soup = BS(driver.page_source, "html.parser")
-        try:
-            d = soup.find("path", {"class": "leaflet-interactive"})["d"]
-        except:
-            if attempts >= max_attempts:
-                raise Exception("max_attempts exceeded waiting for page to load")
-            else:
-                attempts += 1
-    return d
-
-
-# =============================================================================
-
-
-api = overpass.API(timeout=600)
-
-
-
 
 if __name__ == "__main__":
 
@@ -431,7 +542,7 @@ if __name__ == "__main__":
         osm_df = loc_df_not_null.loc[loc_df_not_null.location.str.contains(osm_str)].copy()
 
 
-        osm_df["osm_list"] = osm_df.location.apply(lambda x: extract_links_from_text(x, osm_str))
+        osm_df["osm_list"] = osm_df.location.apply(lambda x: split_and_match_text(x, " ", osm_str))
 
 
         # save dataframe with osm links to csv
@@ -559,24 +670,6 @@ if __name__ == "__main__":
     feature_df.to_csv(feature_df_path, index=False)
 
 
-    # |||||||||||||||||||||
-    # TESTING SUBSET
-
-    # 73914  directions relation
-    # 73153  node relation way
-    # feature_df = feature_df.loc[feature_df.tuff_id.isin([73914, 73153])]
-
-    # feature_df = feature_df[3600:3650].copy(deep=True)
-    # |||||||||||||||||||||
-
-    # feature_df = feature_df.loc[feature_df.osm_type != "directions"].copy(deep=True)
-
-
-        # get_osm_feat for each row in feature_df
-        #     - parallelize
-        #     - buffer lines/points
-        #     - convert all features to multipolygons
-
     # generate list of tasks to iterate over
     flist = list(zip(
         feature_df["unique_id"],
@@ -589,8 +682,11 @@ if __name__ == "__main__":
     ))
 
 
-
     print("Running feature generation")
+    # get_osm_feat for each row in feature_df
+    #     - parallelize
+    #     - buffer lines/points
+    #     - convert all features to multipolygons
 
     # results = []
     # for result in run_tasks(get_osm_feat, flist, mode, max_workers=max_workers, chunksize=1, unordered=True):

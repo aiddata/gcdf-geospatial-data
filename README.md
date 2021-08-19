@@ -34,11 +34,21 @@ design / approach, stack used, code overview, data sources / apis, etc.
 
 ### Setup Environment:
 
-1. Setup Conda Python environment:
+1. Clone (or download) repository
+
+Example:
+```
+git clone git@github.com:aiddata/china-osm-geodata.git
+cd china-osm-geodata
+```
+
+2. Setup Python environment:
+
+For the easiest setup, we strongly suggest using Anaconda and following the steps below. If you do not already have Anaconda installed, please see their [installation guides](https://docs.anaconda.com/anaconda/install/index.html).
 
 ```
-conda create -n tuff_osm python=3.8
-conda activate tuff_osm
+conda create -n china_osm python=3.8
+conda activate china_osm
 conda install -c conda-forge bs4 shapely pandas selenium==3.141.0
 pip install osm2geojson==0.1.29 overpass
 # Only required if using parallel processing
@@ -51,7 +61,7 @@ Notes:
     - You will still need to install packages using pip after creating the environment.
 - pip was needed to install osm2geojson in order to get newer version (may be available through latest conda, but not tested in our build)
 - If parallel processing, pip is needed to install mpi4py based on system build of mpi (e.g., OpenMPI)
-    - Warning: if you do not use parallel processing this can take a significant amount of time to run for the full China dataset.
+    - Warning: if you do not use parallel processing this can take a significant amount of time to run for the full dataset.
 
 
 2. Install FireFox binary and geckodriver locally.
@@ -76,6 +86,11 @@ unzip chromedriver_linux64.zip
 Notes:
 - If you are using Chrome you will need to edit the Python code to initiate the Selenium webdriver with Chrome instead of Firefox.
     - Some components to do this are commented out in the code, but they are not likely complete and not tested.
+
+
+3. Adjust variables
+
+- 
 
 ## Run Code
 
