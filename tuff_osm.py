@@ -751,6 +751,13 @@ if __name__ == "__main__":
     grouped_df["geojson_path"] = grouped_df.tuff_id.apply(lambda x: os.path.join(results_dir, "geojsons", f"{x}.geojson"))
 
 
+    # join original project fields back to be included in geojson properties
+    project_data_df = pd.read_csv(input_csv_path)
+    project_fields = ["AidData Tuff Project ID", "Recommended For Aggregates", "Umbrella", "Title", "Status", "Implementation Start Year", "Completion Year", "Flow Type", "Flow Class", "Sector Name", "Commitment Year", "Funding Agencies", "Receiving Agencies", "Implementing Agencies", "Recipient", "Amount (Constant USD2017)", "Planned Implementation Start Date (MM/DD/YYYY)", "Planned Completion Date (MM/DD/YYYY)", "Actual Implementation Start Date (MM/DD/YYYY)", "Actual Completion Date (MM/DD/YYYY)"]
+    project_data_df = project_data_df[project_fields]
+    grouped_df = grouped_df.merge(project_data_df, left_on="tuff_id", right_on="AidData Tuff Project ID" how="left")
+
+
     def build_feature(row):
         """Export each MultiPolygon to individual GeoJSON
             - tuff id as filename
@@ -761,6 +768,9 @@ if __name__ == "__main__":
             "id": row.tuff_id,
             "feature_count": row.feature_count,
         }
+        for k,v in row.items():
+            if k not in ["tuff_id", "feature_count", "multipolygon", "geojson_path"]:
+                props[k] = v
         path = row.geojson_path
         output_single_feature_geojson(geom, props, path)
 
@@ -774,7 +784,7 @@ if __name__ == "__main__":
 
     geom_list = grouped_df["multipolygon"].apply(lambda mp: mp.__geo_interface__)
     props_list = grouped_df.apply(lambda x: {"id": x.tuff_id, "feature_count": x.feature_count}, axis=1)
-    path = os.path.join(results_dir, "combined.geojson")
+    path = os.path.join(results_dir, "combined_global.geojson")
 
     output_multi_feature_geojson(geom_list, props_list, path)
 
