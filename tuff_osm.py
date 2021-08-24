@@ -525,11 +525,18 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(results_dir, "geojsons"), exist_ok=True)
 
 
+    # prepare_only = True
     # from_existing = False
-    from_existing = os.path.join(base_dir, "output_data/prerelease_20210730/results/2021_07_31_16_40/feature_df.csv")
+    # from_existing_timestamp = "2021_07_31_16_40"
+
+    prepare_only = config["main"]["prepare_only"]
+    from_existing = config["main"]["from_existing"]
+    from_existing_timestamp = config["main"]["from_existing_timestamp"]
+
 
     if from_existing:
-        feature_df = pd.read_csv(from_existing)
+        from_existing_path = os.path.join(base_dir, f"output_data/{release_name}/results/{from_existing_timestamp}/feature_df.csv")
+        feature_df = pd.read_csv(from_existing_path)
 
 
     else:
@@ -624,20 +631,18 @@ if __name__ == "__main__":
 
     if "directions" in set(feature_df.loc[feature_df.svg_path.isnull(), "osm_type"]):
 
-        # chromedriver_path = "/sciclone/home20/smgoodman/tuff_osm/chromedriver"
+        # chromedriver_path = "./chromedriver"
         # options = webdriver.ChromeOptions()
-        # options.binary_location = "/sciclone/home20/smgoodman/tuff_osm/chrome-linux/chrome"
+        # options.binary_location = "./chrome-linux/chrome"
         # options.headless = True
         # driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
 
-        # geckodriver_path = "/home/userw/Desktop/tuff_osm/geckodriver"
-        geckodriver_path = "/sciclone/home20/smgoodman/tuff_osm/geckodriver"
+        geckodriver_path = "./geckodriver"
         options = webdriver.FirefoxOptions()
         options.headless = True
         profile = webdriver.FirefoxProfile()
         profile.accept_untrusted_certs = True
-        # options.binary_location = "/home/userw/Desktop/tuff_osm/firefox/firefox"
-        options.binary_location = "/sciclone/home20/smgoodman/tuff_osm/firefox/firefox-bin"
+        options.binary_location = "./firefox/firefox-bin"
 
         # import random
         # if mode == "parallel":
@@ -668,6 +673,10 @@ if __name__ == "__main__":
 
     feature_df_path = os.path.join(results_dir, "feature_df.csv")
     feature_df.to_csv(feature_df_path, index=False)
+
+
+    if prepare_only:
+        sys.exit("Completed preparing feature_df.csv, and exiting as `directions_only` option was set.")
 
 
     # generate list of tasks to iterate over

@@ -53,6 +53,8 @@ cd china-osm-geodata
 
 For the easiest setup, we strongly suggest using Anaconda and following the steps below. If you do not already have Anaconda installed, please see their [installation guides](https://docs.anaconda.com/anaconda/install/index.html).
 
+When using Conda, you will typically want to unset the `PYTHONPATH` variable, e.g. `unsetenv PYTHONPATH` when using tcsh or `unset PYTHONPATH` for bash
+
 ```
 conda create -n china_osm python=3.8
 conda activate china_osm
@@ -97,8 +99,28 @@ Notes:
 
 3. Adjust variables
 
--
+- Edit the `config.ini` file to modify variables as needed
+    - `mode`: set to `parallel` or `serial` depending on how you intend to run the processing (Note: if you do not have an mpi4py installation, the parallel processing option is unlikely to work properly)
+    - `max_workers`: the maximum number of workers to use for parallel processing
+    - `release_name`: a unique name that matches the directory within `./input_data` where input data is located, and is also used to create a corresponding directory in `./output_data` for outputs from processing.
+    - `input_csv_name`: the CSV file name within `./input_data/<release_name>` where the raw input data is located
+    - `from_existing`: Primarily used for debugging/testing with new data. Boolean value indicating whether preliminary data from a previous run should be used to instantiate the current run.
+    - `from_existing_timestamp`: When `from_existing` is set to `True`, this is the timestamp used to create the directory of the output data (e.g., `./output_data/<release_name>/results/<timestamp>`) that will be used to instantiate the current run
+    - `prepare_only`: Boolean value indicating whether only the preliminary stage of data preparation will be run. See details in section below for use cases.
+
+
+- Note: you should not need to adjust the `release_name` or `input_csv_name` when replicating the official processed data
+
 
 ## Run Code
 
-1. To Do
+1. Run the Python script
+    - In serial:
+        - `python tuff_osm.py`
+    - In parallel on W&M's HPC:
+        - Edit `jobscript` to set the source directory for files on the HPC
+        - `qsub jobscript`
+
+2. (Optional) The portion of the script which extracts information from OSM links which are driving directions is the slowest portion as it much be run in serial (for now). As a result, if you intend to use parallel processing in general you may wish to run this portion separately first, then run the remaining code in parallel.
+    - To support this, you may set the `prepare_only` config option to `True` and the script will exit after the initial data preparation stage which includes acquiring data on OSM driving directions.
+    - After using the `prepare_only = True` and `mode = serial` to run the script, you may set `prepare_only = False` and `mode = parallel` and use the accompanying `from_existing` options described above to run the second stage of processing.
