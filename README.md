@@ -12,6 +12,13 @@ Information about data, structure, etc
 Links to data usage guides, examples, related material
 
 
+This data is made available under the [Open Data Commons Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/summary/). The underlying geospatial features are extracted from OpenStreetMap (© OpenStreetMap contributors) and [are also available under the Open Database License](https://www.openstreetmap.org/copyright). In addition to AidData, please credit OpenStreetMap appropriately in any works utilizing these features.
+
+The following citation may be used to credit AidData:
+```
+TBD
+```
+
 
 ## Contributing
 
@@ -90,7 +97,7 @@ Notes:
 
 3. Adjust variables
 
-- 
+-
 
 ## Run Code
 
