@@ -15,12 +15,11 @@ import datetime
 import json
 import requests
 import warnings
-import itertools
+import configparser
 from functools import wraps
 
 from bs4 import BeautifulSoup as BS
-from requests.api import get
-from shapely.geometry import Point, Polygon, LineString, MultiPolygon, shape
+from shapely.geometry import Point, Polygon, LineString, MultiPolygon
 import pandas as pd
 
 import overpass
@@ -29,7 +28,6 @@ import osm2geojson
 
 from selenium import webdriver
 
-import configparser
 
 
 # ensure correct working directory when running as a batch parallel job
