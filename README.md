@@ -24,6 +24,8 @@ The following citation may be used to credit AidData:
 TBD
 ```
 
+OpenStreetMap may be credited using `© OpenStreetMap contributors` or by linking to their copyright page ([https://www.openstreetmap.org/copyright](https://www.openstreetmap.org/copyright))
+
 
 ## Contributing
 
