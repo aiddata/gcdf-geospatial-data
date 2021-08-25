@@ -28,7 +28,7 @@ This is not a license. It is simply a handy reference for understanding the [ODC
 
 
 
-## Open Data Commons Open Database License (ODbL)
+## Open Data Commons Open Database License (ODbL) Summary
 
 This is a human-readable summary of the [ODbL 1.0 license](https://opendatacommons.org/licenses/odbl/1-0/). Please see the disclaimer below.
 
