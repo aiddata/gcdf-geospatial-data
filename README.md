@@ -12,7 +12,12 @@ Information about data, structure, etc
 Links to data usage guides, examples, related material
 
 
-This data is made available under the [Open Data Commons Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/summary/). The underlying geospatial features are extracted from OpenStreetMap (© OpenStreetMap contributors) and [are also available under the Open Database License](https://www.openstreetmap.org/copyright). In addition to AidData, please credit OpenStreetMap appropriately in any works utilizing these features.
+The original dataset produced by AidData is licensed using the [Open Data Commons Attribution License (ODC-By)](https://opendatacommons.org/licenses/by/1-0/). Geospatial data extracted from OpenStreeMaps (OSM) is licensed using the [Open Data Commons Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/).
+
+Any use of the dataset and its content must include appropriate attribution to AidData, while uses incorporating the geospatial features from OSM must also attribute OSM and be made available using ODbL.
+
+Please see the [LICENSE file](LICENSE.md) for human-readable summaries of both ODC-By and ODbL, and links to the full licenses.
+
 
 The following citation may be used to credit AidData:
 ```

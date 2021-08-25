@@ -1,6 +1,6 @@
 ## Overview
 
-The original dataset produced by AidData is licensed using the Open Data Commons Attribution License (ODC-By). Geospatial data extracted from OpenStreeMaps (OSM) is licensed using the Open Data Commons Open Database License (ODbL).
+The original dataset produced by AidData is licensed using the [Open Data Commons Attribution License (ODC-By)](https://opendatacommons.org/licenses/by/1-0/). Geospatial data extracted from OpenStreeMaps (OSM) is licensed using the [Open Data Commons Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/).
 
 Any use of the dataset and its content must include appropriate attribution to AidData, while uses incorporating the geospatial features from OSM must also attribute OSM and be made available using ODbL.
 
