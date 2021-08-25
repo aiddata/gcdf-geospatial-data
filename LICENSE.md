@@ -13,9 +13,9 @@ This is a human-readable summary of the [ODC-BY 1.0 license](https://opendatacom
 
 You are free:
 
--To share: To copy, distribute and use the database.
--To create: To produce works from the database.
--To adapt: To modify, transform and build upon the database.
+- To share: To copy, distribute and use the database.
+- To create: To produce works from the database.
+- To adapt: To modify, transform and build upon the database.
 
 As long as you:
 
