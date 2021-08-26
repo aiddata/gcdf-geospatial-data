@@ -8,8 +8,12 @@ __pycache__
 *.pyc
 input_data/*
 !input_data/2.0release
-output_data
+output_data/*
+!output_data/2.0release
+output_data/*/geojsons/*
 tests.py
+test.py
+test.csv
 directions_parser.py
 examples/ntl_demo/viirs_ntl
 examples/ntl_demo/viirs_ntl_monthly

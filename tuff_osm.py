@@ -16,7 +16,7 @@ import json
 import requests
 import warnings
 import configparser
-from functools import wraps
+import functools
 from pathlib import Path
 
 from bs4 import BeautifulSoup as BS
@@ -431,7 +431,7 @@ def convert_osm_feat_to_multipolygon(fn):
     Returns:
         shapely.geometry.base.BaseGeometry: shapely Polygon or MultiPolygon
     """
-    @wraps(fn)
+    @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         feat = fn(*args, **kwargs)
         if feat.type != "MultiPolygon":
@@ -449,7 +449,7 @@ def buffer_osm_feat(fn):
     Returns:
         shapely.geometry.base.BaseGeometry: shapely Polygon or MultiPolygon
     """
-    @wraps(fn)
+    @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         feat = fn(*args, **kwargs)
         if feat.type not in ["Polygon", "MultiPolygon"]:
@@ -534,7 +534,6 @@ def run_tasks(func, flist, parallel, max_workers=None, chunksize=1):
         for i in wrapper_list:
             results.append(_task_wrapper(*i))
     return results
-
 
 
 if __name__ == "__main__":
@@ -767,7 +766,7 @@ if __name__ == "__main__":
     # -------------------------------------
     # -------------------------------------
 
-    invalid_tuff_id_list = list(set(output_df.loc[output_df.status == 1].tuff_id))
+    invalid_tuff_id_list = list(set(output_df.loc[output_df.status != 0].tuff_id))
 
     valid_df = output_df.loc[~output_df.tuff_id.isin(invalid_tuff_id_list)].copy(deep=True)
 
@@ -787,9 +786,9 @@ if __name__ == "__main__":
 
     # join original project fields back to be included in geojson properties
     project_data_df = input_data.copy()
-    project_fields = ["AidData Tuff Project ID", "Recommended For Aggregates", "Umbrella", "Title", "Status", "Implementation Start Year", "Completion Year", "Flow Type", "Flow Class", "Sector Name", "Commitment Year", "Funding Agencies", "Receiving Agencies", "Implementing Agencies", "Recipient", "Amount (Constant USD2017)", "Planned Implementation Start Date (MM/DD/YYYY)", "Planned Completion Date (MM/DD/YYYY)", "Actual Implementation Start Date (MM/DD/YYYY)", "Actual Completion Date (MM/DD/YYYY)"]
+    project_fields = ["AidData TUFF Project ID", "Recommended For Aggregates", "Umbrella", "Title", "Status", "Implementation Start Year", "Completion Year", "Flow Type", "Flow Class", "AidData Sector Name", "Commitment Year", "Funding Agencies", "Receiving Agencies", "Implementing Agencies", "Recipient", "Amount (Constant USD2017)", "Planned Implementation Start Date (MM/DD/YYYY)", "Planned Completion Date (MM/DD/YYYY)", "Actual Implementation Start Date (MM/DD/YYYY)", "Actual Completion Date (MM/DD/YYYY)", "finance_type"]
     project_data_df = project_data_df[project_fields]
-    grouped_df = grouped_df.merge(project_data_df, left_on="tuff_id", right_on="AidData Tuff Project ID", how="left")
+    grouped_df = grouped_df.merge(project_data_df, left_on="tuff_id", right_on="AidData TUFF Project ID", how="left")
 
 
     def build_feature(row):
@@ -803,7 +802,11 @@ if __name__ == "__main__":
             "feature_count": row.feature_count,
         }
         for k,v in row.items():
-            if k not in ["tuff_id", "feature_count", "multipolygon", "geojson_path"]:
+            if k not in ["tuff_id", "feature_list", "feature_count", "multipolygon", "geojson_path", "geometry"]:
+                if isinstance(v, type(pd.NaT)):
+                    v = None
+                elif type(v) not in [int, str, float]:
+                    v = str(v)
                 props[k] = v
         path = row.geojson_path
         output_single_feature_geojson(geom, props, path)
@@ -811,7 +814,6 @@ if __name__ == "__main__":
 
     for ix, row in grouped_df.iterrows():
         build_feature(row)
-
 
 
     # combine all MultiPolygons into one GeoJSON
