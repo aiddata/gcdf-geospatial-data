@@ -17,6 +17,7 @@ import requests
 import warnings
 import configparser
 from functools import wraps
+from pathlib import Path
 
 from bs4 import BeautifulSoup as BS
 from shapely.geometry import Point, Polygon, LineString, MultiPolygon
@@ -42,28 +43,53 @@ config.read('config.ini')
 mode = config["main"]["mode"]
 max_workers = config["main"]["max_workers"]
 release_name = config["main"]["release_name"]
-input_csv_name = config["main"]["input_csv_name"]
-
-
-# define core variables
-
-# artifact from when working dir was manually specified
-base_dir = "."
-
-input_csv_path = os.path.join(base_dir, "input_data", release_name, input_csv_name)
 
 # fields from input csv
-id_field = "AidData Tuff Project ID"
-location_field = "Geographic Location"
+id_field = config["main"]["id_field"]
+location_field = config["main"]["location_field"]
 
 # search string used to identify relevant OSM link within the location_field of input csv
-osm_str = "https://www.openstreetmap.org/"
+osm_str = config["main"]["osm_str"]
 
-output_dir = os.path.join(base_dir, "output_data", release_name)
+
+
+
+# artifact from when working dir was manually specified
+base_dir = Path(".")
+
+# directory where all outputs will be saved
+output_dir = base_dir / "output_data" / release_name
 
 # initialize overpass api on all processes
 api = overpass.API(timeout=600)
 
+
+def load_input_data():
+    """Loads input datasets from various Excel sheets
+
+    Makes column names uniform
+    Creates field to indicate source dataset
+
+    Returns:
+        pandas.DataFrame: combined input dataframe
+    """
+    # read in separate datasets
+    development_df = pd.read_excel(base_dir / "input_data" / release_name / "AidDatasGlobalChineseDevelopmentFinanceDatasetv2.0_forseth.xlsx", sheet_name=0)
+    military_df = pd.read_excel(base_dir / "input_data" / release_name / "AidDatasGlobalChineseMilitaryFinanceDataset.xlsx", sheet_name=0)
+    huawei_df = pd.read_excel(base_dir / "input_data" / release_name / "AidDatasGlobalHuaweiFinanceDataset.xlsx", sheet_name=0)
+
+    # rename non-matching columns
+    military_df.rename(columns={'Recommended For Military Aggregates': 'Recommended For Aggregates'}, inplace=True)
+    huawei_df.rename(columns={'Recommended For Huawei Aggregates': 'Recommended For Aggregates'}, inplace=True)
+
+    # add field to indicate source dataset
+    development_df["finance_type"] = "development"
+    military_df["finance_type"] = "military"
+    huawei_df["finance_type"] = "huawei"
+
+    # merge datasets
+    input_data = pd.concat([development_df, military_df, huawei_df], axis=0)
+    return input_data
 
 
 def get_current_timestamp(format_str=None):
@@ -519,6 +545,8 @@ if __name__ == "__main__":
 
     timestamp = get_current_timestamp('%Y_%m_%d_%H_%M')
 
+    input_data = load_input_data()
+
     results_dir = os.path.join(output_dir, "results", timestamp)
     os.makedirs(os.path.join(results_dir, "geojsons"), exist_ok=True)
 
@@ -533,13 +561,14 @@ if __name__ == "__main__":
 
 
     if from_existing:
-        from_existing_path = os.path.join(base_dir, f"output_data/{release_name}/results/{from_existing_timestamp}/feature_df.csv")
+        from_existing_path = base_dir / "output_data" / release_name / "results" / from_existing_timestamp / "feature_df.csv"
         feature_df = pd.read_csv(from_existing_path)
 
 
     else:
 
-        raw_df = pd.read_csv(input_csv_path)
+        raw_df = input_data.copy()
+
         loc_df = raw_df[[id_field, location_field]].copy(deep=True)
         loc_df.columns = ["id", "location"]
 
@@ -759,7 +788,7 @@ if __name__ == "__main__":
 
 
     # join original project fields back to be included in geojson properties
-    project_data_df = pd.read_csv(input_csv_path)
+    project_data_df = input_data.copy()
     project_fields = ["AidData Tuff Project ID", "Recommended For Aggregates", "Umbrella", "Title", "Status", "Implementation Start Year", "Completion Year", "Flow Type", "Flow Class", "Sector Name", "Commitment Year", "Funding Agencies", "Receiving Agencies", "Implementing Agencies", "Recipient", "Amount (Constant USD2017)", "Planned Implementation Start Date (MM/DD/YYYY)", "Planned Completion Date (MM/DD/YYYY)", "Actual Implementation Start Date (MM/DD/YYYY)", "Actual Completion Date (MM/DD/YYYY)"]
     project_data_df = project_data_df[project_fields]
     grouped_df = grouped_df.merge(project_data_df, left_on="tuff_id", right_on="AidData Tuff Project ID" how="left")
