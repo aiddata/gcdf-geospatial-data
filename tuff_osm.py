@@ -791,7 +791,7 @@ if __name__ == "__main__":
     project_data_df = input_data.copy()
     project_fields = ["AidData Tuff Project ID", "Recommended For Aggregates", "Umbrella", "Title", "Status", "Implementation Start Year", "Completion Year", "Flow Type", "Flow Class", "Sector Name", "Commitment Year", "Funding Agencies", "Receiving Agencies", "Implementing Agencies", "Recipient", "Amount (Constant USD2017)", "Planned Implementation Start Date (MM/DD/YYYY)", "Planned Completion Date (MM/DD/YYYY)", "Actual Implementation Start Date (MM/DD/YYYY)", "Actual Completion Date (MM/DD/YYYY)"]
     project_data_df = project_data_df[project_fields]
-    grouped_df = grouped_df.merge(project_data_df, left_on="tuff_id", right_on="AidData Tuff Project ID" how="left")
+    grouped_df = grouped_df.merge(project_data_df, left_on="tuff_id", right_on="AidData Tuff Project ID", how="left")
 
 
     def build_feature(row):
