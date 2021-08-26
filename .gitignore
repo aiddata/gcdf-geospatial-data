@@ -6,7 +6,8 @@ geckodriver*
 *firefox*
 __pycache__
 *.pyc
-input_data
+input_data/*
+!input_data/2.0release
 output_data
 tests.py
 directions_parser.py
