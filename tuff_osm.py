@@ -31,6 +31,14 @@ from selenium import webdriver
 
 
 
+# artifact from when working dir was manually specified
+base_dir = Path(".")
+
+# initialize overpass api on all processes
+api = overpass.API(timeout=600)
+
+
+
 # ensure correct working directory when running as a batch parallel job
 # in all other cases user should already be in project directory
 if hasattr(sys, 'ps1'):
@@ -40,7 +48,7 @@ if hasattr(sys, 'ps1'):
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-mode = config["main"]["mode"]
+parallel = config.getboolean('main', "parallel")
 max_workers = config["main"]["max_workers"]
 release_name = config["main"]["release_name"]
 
@@ -50,18 +58,6 @@ location_field = config["main"]["location_field"]
 
 # search string used to identify relevant OSM link within the location_field of input csv
 osm_str = config["main"]["osm_str"]
-
-
-
-
-# artifact from when working dir was manually specified
-base_dir = Path(".")
-
-# directory where all outputs will be saved
-output_dir = base_dir / "output_data" / release_name
-
-# initialize overpass api on all processes
-api = overpass.API(timeout=600)
 
 
 def load_input_data():
@@ -516,10 +512,10 @@ def _task_wrapper(func, args):
         return (1, repr(e), args, None)
 
 
-def run_tasks(func, flist, mode, max_workers=None, chunksize=1):
+def run_tasks(func, flist, parallel, max_workers=None, chunksize=1):
     # run all downloads (parallel and serial options)
     wrapper_list = [(func, i) for i in flist]
-    if mode == "parallel":
+    if parallel:
         # see: https://mpi4py.readthedocs.io/en/stable/mpi4py.futures.html
         from mpi4py.futures import MPIPoolExecutor
         if max_workers is None:
@@ -547,6 +543,8 @@ if __name__ == "__main__":
 
     input_data = load_input_data()
 
+    # directory where all outputs will be saved
+    output_dir = base_dir / "output_data" / release_name
     results_dir = os.path.join(output_dir, "results", timestamp)
     os.makedirs(os.path.join(results_dir, "geojsons"), exist_ok=True)
 
@@ -555,8 +553,8 @@ if __name__ == "__main__":
     # from_existing = False
     # from_existing_timestamp = "2021_07_31_16_40"
 
-    prepare_only = config["main"]["prepare_only"]
-    from_existing = config["main"]["from_existing"]
+    prepare_only = config.getboolean('main', "prepare_only")
+    from_existing = config.getboolean('main', "from_existing")
     from_existing_timestamp = config["main"]["from_existing_timestamp"]
 
 
@@ -672,7 +670,7 @@ if __name__ == "__main__":
         options.binary_location = "./firefox/firefox-bin"
 
         # import random
-        # if mode == "parallel":
+        # if parallel:
         #     sleep_val = random.randint(0, max_workers)
         #     print(f"Sleeping for {sleep_val} seconds before starting...")
         #     time.sleep(sleep_val)
@@ -725,10 +723,10 @@ if __name__ == "__main__":
     #     - convert all features to multipolygons
 
     # results = []
-    # for result in run_tasks(get_osm_feat, flist, mode, max_workers=max_workers, chunksize=1, unordered=True):
+    # for result in run_tasks(get_osm_feat, flist, parallel, max_workers=max_workers, chunksize=1, unordered=True):
     #     results.append(result)
 
-    results = run_tasks(get_osm_feat, flist, mode, max_workers=max_workers, chunksize=1)
+    results = run_tasks(get_osm_feat, flist, parallel, max_workers=max_workers, chunksize=1)
 
     print("Completed feature generation")
 
