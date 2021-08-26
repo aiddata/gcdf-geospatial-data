@@ -63,7 +63,7 @@ import matplotlib.colors as clr
 # user variables
 
 # root path of all files references
-base_path = Path("/home/userw/Desktop/tuff_osm/examples")
+base_path = Path("/home/userw/Desktop/tuff_osm/examples/ntl_demo")
 
 # file name of the vector file containing the features to explore
 vector_file_name = "combined_63447_63448.geojson"
@@ -74,7 +74,7 @@ buffer_size_m = 5000
 # -------------------------------------
 
 # define and create outputs directory
-output_dir = base_path / "ntl_demo_output" / vector_file_name.split(".")[0]
+output_dir = base_path / "output" / vector_file_name.split(".")[0]
 output_dir.mkdir(parents=True, exist_ok=True)
 
 # load vector data
