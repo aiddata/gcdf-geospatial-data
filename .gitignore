@@ -10,3 +10,5 @@ input_data
 output_data
 tests.py
 directions_parser.py
+examples/viirs_ntl
+examples/viirs_ntl_monthly
