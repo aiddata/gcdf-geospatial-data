@@ -75,7 +75,7 @@ When using Conda, you will typically want to unset the `PYTHONPATH` variable, e.
 ```
 conda create -n china_osm python=3.8
 conda activate china_osm
-conda install -c conda-forge bs4 shapely pandas selenium==3.141.0
+conda install -c conda-forge bs4 shapely pandas selenium==3.141.0 openpyxl
 pip install osm2geojson==0.1.29 overpass
 # Only required if using parallel processing
 pip install mpi4py
