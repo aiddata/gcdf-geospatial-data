@@ -1,0 +1,3 @@
+tuff_id,clean_link,osm_type,osm_id,svg_path,unique_id,status,message,feature
+50061,https://www.openstreetmap.org/relation/12625141,relation,12625141.0,,3022,1.0,IndexError('list index out of range'),
+85155,https://www.openstreetmap.org/relation/12625141,relation,12625141.0,,7441,1.0,IndexError('list index out of range'),
