@@ -11,9 +11,12 @@ import sys
 import os
 import re
 import time
+import math
+import shutil
 import datetime
 import json
 import requests
+import random
 import warnings
 import configparser
 import functools
@@ -550,7 +553,7 @@ if __name__ == "__main__":
 
     # directory where all outputs will be saved
     output_dir = base_dir / "output_data" / release_name
-    results_dir = os.path.join(output_dir, "results", timestamp)
+    results_dir = output_dir / "results" / timestamp
     os.makedirs(os.path.join(results_dir, "geojsons"), exist_ok=True)
 
 
@@ -567,6 +570,9 @@ if __name__ == "__main__":
         from_existing_path = base_dir / "output_data" / release_name / "results" / from_existing_timestamp / "feature_df.csv"
         feature_df = pd.read_csv(from_existing_path)
 
+        # copy previously generated files to directory for current run
+        shutil.copyfile(base_dir / "output_data" / release_name / "results" / from_existing_timestamp / "osm_links_df.csv", results_dir / "osm_links_df.csv")
+        shutil.copyfile(base_dir / "output_data" / release_name / "results" / from_existing_timestamp / "osm_error_df.csv", results_dir / "osm_error_df.csv")
 
     else:
 
