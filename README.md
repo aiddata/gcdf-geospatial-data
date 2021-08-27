@@ -49,11 +49,13 @@ At AidData we believe in transparency and making our work replicable. In this se
 
 ### Technical Overview
 
-The code in this repository utilizes a combination of webscrapping, APIs, and geospatial processing to extract geospatial features from OpenStreeMap (OSM) URLs which detail either OSM features or driving directions. Python is used for all primary processing (Shell scripts are also used to initialize parallel jobs and manage repository files) and has been tested with packages and dependencies managed by Anaconda (see section on setting up environment below). While all code can be run on a local environment using a single process, leveraging parallel processing (implemented using [mpi4py](https://github.com/mpi4py/mpi4py) on [William & Mary's HPC](https://www.wm.edu/offices/it/services/researchcomputing/atwm/index.php)) will substantially reduce the amount of time needed to run.
+The code in this repository utilizes a combination of webscrapping, APIs, and geospatial processing to extract geospatial features from OpenStreeMap (OSM) URLs which detail either OSM features or driving directions. Python is used for all primary processing (Shell scripts are also used to initialize parallel jobs and manage repository files) and has been tested with packages and dependencies managed by Anaconda (see section on setting up environment below). All code can be run on a local environment using a single process or by leveraging parallel processing (implemented using both [concurrent futures](https://docs.python.org/3/library/concurrent.futures.html), as well as [mpi4py](https://github.com/mpi4py/mpi4py) on [William & Mary's HPC](https://www.wm.edu/offices/it/services/researchcomputing/atwm/index.php)), which will substantially reduce the amount of time needed to run.
 
 Python webscrapping is dependent on [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) and [Selenium](https://selenium-python.readthedocs.io/), and access to the OSM Overpass API leverages the [Overpass API Python wrapper](https://github.com/mvexel/overpass-api-python-wrapper). Additional geospatial processing and data management utilizes [Shapely](https://shapely.readthedocs.io/en/stable/manual.html), [osm2geojson](https://github.com/aspectumapp/osm2geojson), and [Pandas](https://pandas.pydata.org/).
 
 Project data prepared using AidData's TUFF (Tracking Underreport Financial Flows) methodology serves an input and contains text descriptions, incuding OSM URLs, of locations associated with Chinese financed projects which are identified by a unique "AidData Tuff Project ID". For each project, OSM URLs are extracted (projects may have zero or multiple OSM URLs) and converted into geospatial features one of multiple approaches, and saved as a GeoJSON. Features described using OSM's [nodes](https://wiki.openstreetmap.org/wiki/Node) or [ways](https://wiki.openstreetmap.org/wiki/Way) - typically points, lines, and simple polygons - are scrapped directly from OSM URLs by extracting coordinates. More complex features such as mulitpolygons represented by OSM's [relations](https://wiki.openstreetmap.org/wiki/Relation)are retrieved using the Overpass API. Finally, OSM URLs containing custom driving directions between two points utilize the Selenium webdriver to extract [SVG path](https://www.w3.org/TR/SVG/paths.html) details from map tiles which are then converted to geospatial features.
+
+While the code developed has considerable error handling built in, it is still possibly to encounter scenarios where APIs are overloaded, web pages are down, or other edge cases that result in errors. Most errors will still be handled to avoid processing failures, and saved in dedicated outputs detailing the projects and error messages involved.
 
 
 ### Setup Environment:
@@ -117,26 +119,24 @@ Notes:
 3. Adjust variables
 
 - Edit the `config.ini` file to modify variables as needed
-    - `mode`: set to `parallel` or `serial` depending on how you intend to run the processing (Note: if you do not have an mpi4py installation, the parallel processing option is unlikely to work properly)
+    - `parallel`: set to `true` or `false` depending on how you intend to run the processing
     - `max_workers`: the maximum number of workers to use for parallel processing
     - `release_name`: a unique name that matches the directory within `./input_data` where input data is located, and is also used to create a corresponding directory in `./output_data` for outputs from processing.
-    - `from_existing`: Primarily used for debugging/testing with new data. Boolean value indicating whether preliminary data from a previous run should be used to instantiate the current run.
+    - `from_existing`: Primarily used for debugging/testing with new data. Boolean value indicating whether preliminary data from a previous run should be used to instantiate the current run. You should not need to adjust the `release_name` if just replicating the official processed data
     - `from_existing_timestamp`: When `from_existing` is set to `True`, this is the timestamp used to create the directory of the output data (e.g., `./output_data/<release_name>/results/<timestamp>`) that will be used to instantiate the current run
     - `prepare_only`: Boolean value indicating whether only the preliminary stage of data preparation will be run. See details in section below for use cases.
-
-
-- Note: you should not need to adjust the `release_name` when replicating the official processed data
+    - `id_field`, `location_field`, and `osm_str`: These are static variables that should not be changed for replication, yet are made available to support adapting this code for additional datasets in the future. `id_field` is a unique ID field in the input data, `location_field` is the field containing OSM links, and `osm_str` is the string used to identify OSM links.
 
 
 ## Run Code
 
 1. Run the Python script
-    - In serial:
+    - Locally:
         - `python tuff_osm.py`
-    - In parallel on W&M's HPC:
+    - On W&M's HPC:
         - Edit `jobscript` to set the source directory for files on the HPC
         - `qsub jobscript`
 
 2. (Optional) The portion of the script which extracts information from OSM links which are driving directions is the slowest portion as it much be run in serial (for now). As a result, if you intend to use parallel processing in general you may wish to run this portion separately first, then run the remaining code in parallel.
     - To support this, you may set the `prepare_only` config option to `True` and the script will exit after the initial data preparation stage which includes acquiring data on OSM driving directions.
-    - After using the `prepare_only = True` and `mode = serial` to run the script, you may set `prepare_only = False` and `mode = parallel` and use the accompanying `from_existing` options described above to run the second stage of processing.
+    - After using the `prepare_only = True` and `parallel = false` to run the script, you may set `prepare_only = False` and `parallel = true` and use the accompanying `from_existing` options described above to run the second stage of processing.
