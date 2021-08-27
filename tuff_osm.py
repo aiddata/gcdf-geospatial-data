@@ -35,7 +35,13 @@ from selenium import webdriver
 base_dir = Path(".")
 
 # initialize overpass api on all processes
-api = overpass.API(timeout=600)
+headers = {
+    'Accept-Charset': 'utf-8;q=0.7,*;q=0.7',
+    'From': 'geo@aiddata.wm.edu',
+    'Referer': 'https://aiddata.org/',
+    'User-Agent': 'overpass-api-python-wrapper (Linux x86_64)'
+}
+api = overpass.API(timeout=600, headers=headers)
 
 
 
@@ -247,7 +253,7 @@ def get_from_overpass(osm_id, osm_type, api):
         except (TimeoutError, ServerLoadError, MultipleRequestsError):
             if ix > 10: raise
             ix += 1
-            time.sleep(60)
+            time.sleep(random.randint(30, 120))
     return result
 
 
