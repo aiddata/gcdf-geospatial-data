@@ -1,5 +1,5 @@
 stdoe
-tuff_osm.o*
+*_osm.o*
 previous
 chrome*
 geckodriver*
@@ -8,9 +8,8 @@ __pycache__
 *.pyc
 input_data/*
 !input_data/2.0release
-output_data/*
-!output_data/2.0release
-output_data/*/geojsons/*
+output_data/*/*/*/*
+!output_data/**/*.csv
 tests.py
 test.py
 test.csv
