@@ -82,16 +82,13 @@ def load_input_data():
     development_df = pd.read_excel(base_dir / "input_data" / release_name / "AidDatasGlobalChineseDevelopmentFinanceDatasetv2.0_forseth.xlsx", sheet_name=0)
     military_df = pd.read_excel(base_dir / "input_data" / release_name / "AidDatasGlobalChineseMilitaryFinanceDataset.xlsx", sheet_name=0)
     huawei_df = pd.read_excel(base_dir / "input_data" / release_name / "AidDatasGlobalHuaweiFinanceDataset.xlsx", sheet_name=0)
-
     # rename non-matching columns
     military_df.rename(columns={'Recommended For Military Aggregates': 'Recommended For Aggregates'}, inplace=True)
     huawei_df.rename(columns={'Recommended For Huawei Aggregates': 'Recommended For Aggregates'}, inplace=True)
-
     # add field to indicate source dataset
     development_df["finance_type"] = "development"
     military_df["finance_type"] = "military"
     huawei_df["finance_type"] = "huawei"
-
     # merge datasets
     input_data = pd.concat([development_df, military_df, huawei_df], axis=0)
     return input_data
@@ -846,9 +843,19 @@ if __name__ == "__main__":
 
     geom_list = grouped_df["multipolygon"].apply(lambda mp: mp.__geo_interface__)
     props_list = grouped_df.apply(lambda x: {"id": x.tuff_id, "feature_count": x.feature_count}, axis=1)
-    path = os.path.join(results_dir, "combined_global.geojson")
+    path = os.path.join(results_dir, "all_combined_global.geojson")
 
     output_multi_feature_geojson(geom_list, props_list, path)
+
+    # create combined GeoJSON for each finance type
+    for i in set(grouped_df.finance_type):
+        print(i)
+        subgrouped_df = grouped_df[grouped_df.finance_type == i].copy()
+        geom_list = subgrouped_df["multipolygon"].apply(lambda mp: mp.__geo_interface__)
+        props_list = subgrouped_df.apply(lambda x: {"id": x.tuff_id, "feature_count": x.feature_count}, axis=1)
+        path = os.path.join(results_dir, f"{i}_combined_global.geojson")
+        output_multi_feature_geojson(geom_list, props_list, path)
+
 
 
     print(f"Dataset complete: {timestamp}")
