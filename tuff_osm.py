@@ -836,6 +836,12 @@ if __name__ == "__main__":
             - properties: tuff_id, count of locations, anything else?
         """
         geom = row.multipolygon.__geo_interface__
+        props = prepare_properties(row)
+        path = row.geojson_path
+        output_single_feature_geojson(geom, props, path)
+
+
+    def prepare_properties(row):
         props = {
             "id": row.tuff_id,
             "feature_count": row.feature_count,
@@ -847,18 +853,17 @@ if __name__ == "__main__":
                 elif type(v) not in [int, str, float]:
                     v = str(v)
                 props[k] = v
-        path = row.geojson_path
-        output_single_feature_geojson(geom, props, path)
+        return props
 
 
     for ix, row in grouped_df.iterrows():
         build_feature(row)
 
 
-    # combine all MultiPolygons into one GeoJSON
+    # combine all MultiPolygons into one GeoJSON with properties
 
     geom_list = grouped_df["multipolygon"].apply(lambda mp: mp.__geo_interface__)
-    props_list = grouped_df.apply(lambda x: {"id": x.tuff_id, "feature_count": x.feature_count}, axis=1)
+    props_list = grouped_df.apply(lambda x: prepare_properties(x), axis=1)
     path = os.path.join(results_dir, "all_combined_global.geojson")
 
     output_multi_feature_geojson(geom_list, props_list, path)
@@ -868,11 +873,17 @@ if __name__ == "__main__":
         print(i)
         subgrouped_df = grouped_df[grouped_df.finance_type == i].copy()
         geom_list = subgrouped_df["multipolygon"].apply(lambda mp: mp.__geo_interface__)
-        props_list = subgrouped_df.apply(lambda x: {"id": x.tuff_id, "feature_count": x.feature_count}, axis=1)
+        props_list = grouped_df.apply(lambda x: prepare_properties(x), axis=1)
         path = os.path.join(results_dir, f"{i}_combined_global.geojson")
         output_multi_feature_geojson(geom_list, props_list, path)
 
 
+    # add github geojson url to df and save to csv
+    grouped_df["viz_geojson_url"] = grouped_df.tuff_id.apply(lambda x: f"https://github.com/aiddata/china-osm-geodata/blob/master/latest/geojsons/{x}.geojson")
+    grouped_df["dl_geojson_url"] = grouped_df.tuff_id.apply(lambda x: f"https://raw.githubusercontent.com/aiddata/china-osm-geodata/master/latest/geojsons/{x}.geojson")
+
+    drop_cols = ['tuff_id', 'feature_list', 'multipolygon', 'feature_count', 'geojson_path']
+    grouped_df[[i for i in grouped_df.columns if i not in drop_cols]].to_csv(os.path.join(results_dir, "final_df.csv"), index=False)
 
     print(f"Dataset complete: {timestamp}")
     print(f"\t{results_dir}")
