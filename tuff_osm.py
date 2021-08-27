@@ -58,7 +58,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 parallel = config.getboolean('main', "parallel")
-max_workers = config["main"]["max_workers"]
+max_workers = int(config["main"]["max_workers"])
 release_name = config["main"]["release_name"]
 
 # fields from input csv
@@ -726,32 +726,6 @@ if __name__ == "__main__":
         sys.exit("Completed preparing feature_df.csv, and exiting as `directions_only` option was set.")
 
 
-    # generate list of tasks to iterate over
-    flist = list(zip(
-        feature_df["unique_id"],
-        feature_df["clean_link"],
-        feature_df["osm_type"],
-        feature_df["osm_id"],
-        feature_df["svg_path"],
-        # itertools.repeat(driver),
-        # itertools.repeat(api)
-    ))
-
-
-    print("Running feature generation")
-    # get_osm_feat for each row in feature_df
-    #     - parallelize
-    #     - buffer lines/points
-    #     - convert all features to multipolygons
-
-    # results = []
-    # for result in run_tasks(get_osm_feat, flist, parallel, max_workers=max_workers, chunksize=1, unordered=True):
-    #     results.append(result)
-
-    results = run_tasks(get_osm_feat, flist, parallel, max_workers=max_workers, chunksize=1)
-
-    print("Completed feature generation")
-
     # ---------
     # column name for join field in original df
     results_join_field_name = "unique_id"
@@ -759,26 +733,72 @@ if __name__ == "__main__":
     results_join_field_loc = 0
     # ---------
 
-    # join function results back to df
-    results_df = pd.DataFrame(results, columns=["status", "message", results_join_field_name, "feature"])
-    # results_df.drop(["feature"], axis=1, inplace=True)
-    results_df[results_join_field_name] = results_df[results_join_field_name].apply(lambda x: x[results_join_field_loc])
+    def gen_flist(df):
+        # generate list of tasks to iterate over
+        flist = list(zip(
+            df["unique_id"],
+            df["clean_link"],
+            df["osm_type"],
+            df["osm_id"],
+            df["svg_path"],
+            # itertools.repeat(driver),
+            # itertools.repeat(api)
+        ))
+        return flist
 
-    output_df = feature_df.merge(results_df, on=results_join_field_name, how="left")
+    flist = gen_flist(feature_df)
 
-    print("Results:")
+    valid_df = None
+    errors_df = None
+    iteration = 0
+    while errors_df is None or len(errors_df) > 0:
 
-    errors_df = output_df[output_df["status"] != 0]
-    print("\t{} errors found out of {} tasks".format(len(errors_df), len(output_df)))
+        iteration += 1
+
+        if errors_df is not None:
+            flist = gen_flist(errors_df)
+
+        print("Running feature generation")
+        # get_osm_feat for each row in feature_df
+        #     - parallelize
+        #     - buffer lines/points
+        #     - convert all features to multipolygons
+
+        # results = []
+        # for result in run_tasks(get_osm_feat, flist, parallel, max_workers=max_workers, chunksize=1, unordered=True):
+        #     results.append(result)
+        iter_max_workers = math.ceil(max_workers / iteration)
+
+        results = run_tasks(get_osm_feat, flist, parallel, max_workers=iter_max_workers, chunksize=1)
+
+        print("Completed feature generation")
+
+        # join function results back to df
+        results_df = pd.DataFrame(results, columns=["status", "message", results_join_field_name, "feature"])
+        # results_df.drop(["feature"], axis=1, inplace=True)
+        results_df[results_join_field_name] = results_df[results_join_field_name].apply(lambda x: x[results_join_field_loc])
+
+        output_df = feature_df.merge(results_df, on=results_join_field_name, how="left")
 
 
+        if valid_df is None:
+            valid_df = output_df[output_df["status"] == 0].copy()
+        else:
+            valid_df = pd.concat([valid_df, output_df.loc[output_df.status == 0]])
 
 
-    # for ix, row in errors_df.iterrows():
-    #     print("\t", row)
+        skipped_df = output_df[~output_df["status"].isin([0, 1])].copy()
+
+        errors_df = output_df[output_df["status"] > 0].copy()
+        print("\t{} errors found out of {} tasks".format(len(errors_df), len(output_df)))
+
+        if iter_max_workers == 1 or iteration >= 5 or len(set(errors_df.message)) == 1 and "IndexError" in list(set(errors_df.message))[0]:
+            break
 
 
-    # output results to csv
+    errors_df.to_csv(os.path.join(results_dir, "processing_errors_df.csv"), index=False)
+
+    # output all results to csv
     output_simple_path = os.path.join(results_dir, "results_df.csv")
     output_df[[i for i in output_df.columns if i != "feature"]].to_csv(output_simple_path, index=False)
 
@@ -788,10 +808,6 @@ if __name__ == "__main__":
 
     # -------------------------------------
     # -------------------------------------
-
-    invalid_tuff_id_list = list(set(output_df.loc[output_df.status != 0].tuff_id))
-
-    valid_df = output_df.loc[~output_df.tuff_id.isin(invalid_tuff_id_list)].copy(deep=True)
 
     print("Building GeoJSONs")
 
