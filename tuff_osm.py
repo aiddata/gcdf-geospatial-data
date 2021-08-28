@@ -817,8 +817,9 @@ if __name__ == "__main__":
     # for group in grouped_df:
     #     group_mp = MultiPolygon([p for mp in group.feature for p in mp]).__geo_interface_
     # move this to apply instead of loop so we can have a final df to output results/errors to
-    grouped_df["multipolygon"] = grouped_df.feature_list.apply(lambda mp_list: MultiPolygon([p for mp in mp_list for p in mp]))
-    grouped_df["feature_count"] = grouped_df.multipolygon.apply(lambda mp: len(mp))
+    grouped_df["multipolygon"] = grouped_df.feature_list.apply(lambda mp_list: cascaded_union([p for mp in mp_list for p in mp]))
+    grouped_df["multipolygon"] = grouped_df.multipolygon.apply(lambda x: MultiPolygon([x]) if x.type == "Polygon" else x)
+    grouped_df["feature_count"] = grouped_df.feature_list.apply(lambda mp: len(mp))
     grouped_df["geojson_path"] = grouped_df.tuff_id.apply(lambda x: os.path.join(results_dir, "geojsons", f"{x}.geojson"))
 
 
