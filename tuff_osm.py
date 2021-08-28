@@ -847,7 +847,7 @@ if __name__ == "__main__":
         }
         for k,v in row.items():
             if k not in ["tuff_id", "feature_list", "feature_count", "multipolygon", "geojson_path", "geometry"]:
-                if isinstance(v, type(pd.NaT)):
+                if isinstance(v, type(pd.NaT)) or pd.isnull(v):
                     v = None
                 elif type(v) not in [int, str, float]:
                     v = str(v)
