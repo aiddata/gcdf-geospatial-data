@@ -765,6 +765,7 @@ if __name__ == "__main__":
 
         results = run_tasks(get_osm_feat, flist, parallel, max_workers=iter_max_workers, chunksize=1)
 
+
         print("Completed feature generation")
 
         # join function results back to df
@@ -789,15 +790,19 @@ if __name__ == "__main__":
         if iter_max_workers == 1 or iteration >= 5 or len(set(errors_df.message)) == 1 and "IndexError" in list(set(errors_df.message))[0]:
             break
 
+    #
+    # errors_df = valid_df.loc[valid_df.osm_type.isin(["rel", "relation"])].copy()
+    # valid_df = valid_df.loc[valid_df.osm_type != "relation"].copy()
+    # flist = gen_flist(errors_df)
+    # results = run_tasks(get_osm_feat, flist, parallel, max_workers=iter_max_workers, chunksize=1)
+    #
+
 
     errors_df.to_csv(os.path.join(results_dir, "processing_errors_df.csv"), index=False)
 
-    # output all results to csv
-    output_simple_path = os.path.join(results_dir, "results_df.csv")
-    output_df[[i for i in output_df.columns if i != "feature"]].to_csv(output_simple_path, index=False)
-
-    output_path = os.path.join(results_dir, "results_features_df.csv")
-    output_df.to_csv(output_path, index=False)
+    # output valid results to csv
+    valid_df[[i for i in valid_df.columns if i != "feature"]].to_csv(results_dir / "valid_df.csv", index=False)
+    valid_df.to_csv(results_dir / "valid_gdf.csv", index=False)
 
 
     # -------------------------------------
