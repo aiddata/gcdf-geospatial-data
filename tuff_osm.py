@@ -24,6 +24,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup as BS
 from shapely.geometry import Point, Polygon, LineString, MultiPolygon
+from shapely.ops import cascaded_union
 import pandas as pd
 
 import overpass
@@ -495,15 +496,8 @@ def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path):
         # if not, does overpass allow us to access deleted/historical versions?
         #
         result = get_from_overpass(osm_id, osm_type, api)
-        geo = osm2geojson.json2shapes(result)
-        # drop nodes that are sometimes parts of relations (e.g. capital is node, along with ADM bounds)
-        good_geo = [i for i in geo if i["properties"]["type"] != "node"]
-        # if relation is actually just nodes, it should be empty after initial pass
-        # so now rebuild with the nodes included
-        # (this is typically just for a multi-point geometry such as a wind farm)
-        if not good_geo:
-            good_geo = [i for i in geo if i["properties"]["type"]]
-        feat = good_geo[0]["shape"]
+        geo_list = osm2geojson.json2shapes(result)
+        feat = cascaded_union([geom["shape"].buffer(0.00001) for geom in geo_list])
     else:
         raise Exception(f"Invalid OSM type in link ({osm_type})", unique_id, None)
     return feat
