@@ -189,7 +189,7 @@ cmap = clr.LinearSegmentedColormap.from_list('custom', ['#ff0000','#000000','#00
 
 
 fig, ax = plt.subplots(1)
-show(diff_2020_2017, transform=viirs2020_transform, cmap=cmap, vmin=-2, vmax=2, title="2020 - 2017", ax=ax)
+show(diff_2020_2017, transform=viirs2020_transform, cmap=cmap, vmin=-2, vmax=2, title="Change in Nighttime Light Output \nwithin Project Area, 2017-2020", ax=ax)
 vector_gdf.plot(ax=ax, color="fuchsia", edgecolor="fuchsia", linewidth=0.5)
 buffer_combined_gs.plot(ax=ax, color="none", edgecolor="lime", linewidth=0.5)
 # plt.show()
@@ -197,7 +197,7 @@ plt.savefig(output_dir / "2020_2017_diff.png")
 
 
 fig, ax = plt.subplots(1)
-show(diff_2017_2014, transform=viirs2020_transform, cmap=cmap, vmin=-2, vmax=2, title="2017 - 2014", ax=ax)
+show(diff_2017_2014, transform=viirs2020_transform, cmap=cmap, vmin=-2, vmax=2, title="Change in Nighttime Light Output \nwithin Project Area, 2014-2017", ax=ax)
 vector_gdf.plot(ax=ax, color="fuchsia", edgecolor="fuchsia", linewidth=0.5)
 buffer_combined_gs.plot(ax=ax, color="none", edgecolor="lime", linewidth=0.5)
 # plt.show()
