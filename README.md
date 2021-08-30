@@ -1,23 +1,37 @@
 # China OSM Geodata
 
-Description of repo, China finance data, links to [AidData](https://www.aiddata.org/), etc.
+Welcome to the GitHub repository for [AidData's](https://www.aiddata.org/) Global Chinese Development Finance Dataset! Please also visit AidData's [dedicated page for work related to China](https://www.aiddata.org/china), where you can find blog posts, announcements, and more.
 
-To download the latest data, click [HERE](https://github.com/aiddata/china-osm-geodata/blob/master/README.md) -- placeholder link
+This repository allows you to:
+1. Download the main dataset as well as the accompanying geospatial features extract from [OpenStreetMap (OSM)](https://www.openstreetmap.org/)
+2. Explore examples, guidelines, other material related to using the geospatial features
+3. Access the code used to extract and process geospatial features from OSM in order to replicate the geospatial data we provide
 
-**AidData's Global Chinese Development Finance Dataset, Version 2.0**:
-The 2.0 version of AidData’s Global Chinese Development Finance Dataset records the known universe of projects (with development, commercial, or representational intent) supported by official financial and in-kind commitments (or pledges) from China between 2000 and 2017, with implementation details covering a 22-year period (2000-2021). AidData systematically collected and quality-assured all projects in the dataset using the 2.0 version of the TUFF methodology.
+<br/>
 
-**AidData's Global Chinese Military Finance Dataset** contains data on projects backed by financial and in-kind commitments (or pledges) from official sources in China that were provided with military intent.  AidData's Global Chinese Development Finance Dataset (Version 2.0) captures military-related projects supported by official commitments (and pledges) from China that are consistent with OECD-DAC criteria for Official Development Assistance (ODA).  These include any projects with development intent that involve the military and exclude projects supported by official commitments (and pledges) that seek to promote the security interests of the country from which the financial transfer originates (the People’s Republic of China) or strengthen the capabilities of military institutions in the recipient country.  However, given that some users have expressed interest in learning more about projects with military intent that are backed by official financial and kind transfers from China, AidData has recorded these “ODA-adjacent” and “OOF-adjacent” projects in a separate tab of the data file. This tab includes 390 projects worth $9.9 billion in 89 countries that have military intent and are backed by financial and in-kind commitments (or pledges) from official sources in China (e.g., the Ministry of Defense, the People’s Liberation Army, and military state-owned enterprises like NORINCO and Poly Technologies). These projects were committed (or pledged) over an 18-year period (2000- 2017), with implementation details covering a 22-year period (2000-2021).  AidData systematically collected and quality-assured all projects in this dataset using the 2.0 version of the TUFF methodology. However, under OECD-DAC guidelines, they do not clearly qualify as ODA or OOF.
+### To download the latest data, click [HERE](input_data/2.0release/PLACEHOLDER.xlsx)
 
-**AidData's Global Huawei Finance Dataset** contains data on projects backed by financial and in-kind commitments (and pledges) from Huawei Technologies Co., Ltd. (“Huawei”) and its subsidiaries. AidData's Global Chinese Development Finance Dataset (Version 2.0) includes projects supported by official commitments (and pledges) from China that were implemented by Huawei and its subsidiaries. However, due to uncertainty about whether Huawei should be treated as a private company or state-owned company, it excludes projects backed by financial and in-kind commitments (and pledges) from Huawei and its subsidiaries. At the same time, some users have expressed interest in learning more about Huawei-financed projects, so AidData has recorded these “ODA-adjacent” and “OOF-adjacent” projects in a separate tab in of the data file. This tab includes 152 projects worth $1.7 billion in 63 countries. These projects were backed by financial and in-kind commitments (and pledges) over an 18-year period (2000- 2017), with implementation details covering a 22-year period (2000-2021).  AidData systematically collected and quality-assured all projects in this dataset using the 2.0 version of the TUFF methodology. However, under OECD-DAC guidelines, they do not clearly qualify as ODA or OOF.
+<br/>
 
+
+<br/>
 
 ## Description
 
-Information about data, structure, etc
+The 2.0 version of **AidData’s Global _Chinese Development Finance_ Dataset** records the known universe of projects (with development, commercial, or representational intent) supported by official financial and in-kind commitments (or pledges) from China between 2000 and 2017, with implementation details covering a 22-year period (2000-2021). AidData systematically collected and quality-assured all projects in the dataset using the 2.0 version of the TUFF methodology.
 
-Links to data usage guides, examples, related material
+In addition to Development Finance, separate datasets on Chinese Military Finance and Huawei Finance are provided. **AidData's Global _Chinese Military Finance_ Dataset** contains data on projects backed by financial and in-kind commitments (or pledges) from official sources in China that were provided with military intent. **AidData's Global _Huawei Finance_ Dataset** contains data on projects backed by financial and in-kind commitments (and pledges) from Huawei Technologies Co., Ltd. (“Huawei”) and its subsidiaries. Due to some military finance falling outside of the OECD-DAC criteria for Official Development Assistance and uncertainty about whether Huawei should be treated as a private company or state-owned company, these projects are provided as separate datasets. To read more about these datasets, please read [their full descriptions](input_data/2.0release/README.md).
 
+
+<!-- Information about data, structure, etc -->
+
+<!-- Links to data usage guides, examples, related material -->
+
+
+
+<br/>
+
+## License
 
 The original dataset produced by AidData is licensed using the [Open Data Commons Attribution License (ODC-By)](https://opendatacommons.org/licenses/by/1-0/). Geospatial data extracted from OpenStreeMaps (OSM) is licensed using the [Open Data Commons Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/).
 
@@ -34,6 +48,8 @@ TBD
 OpenStreetMap may be credited using `© OpenStreetMap contributors` or by linking to their copyright page ([https://www.openstreetmap.org/copyright](https://www.openstreetmap.org/copyright))
 
 
+<br/>
+
 ## Contributing
 
 Whether you have questions about usage, discover a bug, or just want to engage with others using the data, there is a place for you!
@@ -41,6 +57,7 @@ Whether you have questions about usage, discover a bug, or just want to engage w
 [GitHub Discussions](https://github.com/aiddata/china-osm-geodata/discussions) are a great place to ask questions, see what others are talking about, and share research, applications, and ideas. If you'd prefer to get involved in more technical aspects, want to suggest improvements, discover a bug in the code, or run into issues with the data, then please utilize [GitHub's Issues](https://github.com/aiddata/china-osm-geodata/issues).
 
 
+<br/>
 
 ## Replication
 
