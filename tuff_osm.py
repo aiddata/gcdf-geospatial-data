@@ -829,6 +829,8 @@ if __name__ == "__main__":
     project_data_df = project_data_df[project_fields]
     grouped_df = grouped_df.merge(project_data_df, left_on="tuff_id", right_on="AidData TUFF Project ID", how="left")
 
+    # valid_df_with_proj = valid_df.merge(project_data_df, left_on="tuff_id", right_on="AidData TUFF Project ID", how="left")
+
 
     def build_feature(row):
         """Export each MultiPolygon to individual GeoJSON
