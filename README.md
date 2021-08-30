@@ -11,21 +11,22 @@ This repository allows you to:
 
 ### To download the latest data, click [HERE](input_data/2.0release/PLACEHOLDER.xlsx)
 
-<br/>
 
 
 <br/>
 
-## Description
+## Dataset Description
 
 The 2.0 version of **AidData’s Global _Chinese Development Finance_ Dataset** records the known universe of projects (with development, commercial, or representational intent) supported by official financial and in-kind commitments (or pledges) from China between 2000 and 2017, with implementation details covering a 22-year period (2000-2021). AidData systematically collected and quality-assured all projects in the dataset using the 2.0 version of the TUFF methodology.
 
 In addition to Development Finance, separate datasets on Chinese Military Finance and Huawei Finance are provided. **AidData's Global _Chinese Military Finance_ Dataset** contains data on projects backed by financial and in-kind commitments (or pledges) from official sources in China that were provided with military intent. **AidData's Global _Huawei Finance_ Dataset** contains data on projects backed by financial and in-kind commitments (and pledges) from Huawei Technologies Co., Ltd. (“Huawei”) and its subsidiaries. Due to some military finance falling outside of the OECD-DAC criteria for Official Development Assistance and uncertainty about whether Huawei should be treated as a private company or state-owned company, these projects are provided as separate datasets. To read more about these datasets, please read [their full descriptions](input_data/2.0release/README.md).
 
+For a subset of these projects, precise geographic features associated with the location of project activities were identifed through OpenStreetMap. Projects for which OSM features are available have links included in the main dataset to visualize or download the geospatial data from this GitHub repository. Geospatial data is available in the [GeoJSON](https://geojson.org/) format, and are saved in the [latest/geojsons](latest/geojsons) folder, with one GeoJSON per project named according to the project ID. For example, Project 35756 can be viewed via [latest/geojsons/35756.geojson](latest/geojsons/35756.geojson).
 
-<!-- Information about data, structure, etc -->
+Combined GeoJSONS (within a Zip file) are also available within the [latest](latest) folder. The combined GeoJSONS are available for [Chinese Development Finance projects](latest/development_combined_global.geojson.zip), [Chinese Military Finance projects](latest/military_combined_global.geojson.zip), [Huawei Finance projects](latest/huawei_combined_global.geojson.zip), and [all projects](latest/all_combined_global.geojson.zip).
 
-<!-- Links to data usage guides, examples, related material -->
+
+Examples, guides, best practices, and other material related to utilizing the geospatial data can be found in the [Examples](examples) folder. For information on using the core datset and project data, please explore the tabs of the official dataset (see download link for the latest data above).
 
 
 
@@ -145,7 +146,7 @@ Notes:
     - `id_field`, `location_field`, and `osm_str`: These are static variables that should not be changed for replication, yet are made available to support adapting this code for additional datasets in the future. `id_field` is a unique ID field in the input data, `location_field` is the field containing OSM links, and `osm_str` is the string used to identify OSM links.
 
 
-## Run Code
+### Run Code
 
 1. Run the Python script
     - Locally:
