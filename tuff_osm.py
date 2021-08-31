@@ -51,7 +51,7 @@ api = overpass.API(timeout=600, headers=headers)
 
 # ensure correct working directory when running as a batch parallel job
 # in all other cases user should already be in project directory
-if hasattr(sys, 'ps1'):
+if not hasattr(sys, 'ps1'):
     os.chdir(os.path.dirname(__file__))
 
 # read config file
