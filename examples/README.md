@@ -9,7 +9,7 @@ repository. However, they can all be easily installed using Anaconda.
 - Examples may require additional data from other sources such as VIIRS nighttime lights data (Please see https://github.com/aiddata/geo-datasets/tree/master/viirs_ntl for more information on how AidData downloads and prepares this and other data).
 - Additional elements of the examples and scripts (e.g., data paths) may need to be adjusted
 as well before using.
-
+- Software such as [QGIS](https://www.qgis.org/) may be used to visualize or explore data. QGIS is free and open source, and there are many tutorials available online to help with installation and use
 
 ## Nighttime Lights Analysis (ntl_demo)
 

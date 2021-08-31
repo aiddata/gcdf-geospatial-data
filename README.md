@@ -97,7 +97,7 @@ conda create -n china_osm python=3.8
 conda activate china_osm
 conda install -c conda-forge bs4 shapely pandas selenium==3.141.0 openpyxl
 pip install osm2geojson==0.1.29 overpass
-# Only required if using parallel processing
+# Only required if using mpi4py for parallel processing (e.g., on W&M's HPC)
 pip install mpi4py
 ```
 
