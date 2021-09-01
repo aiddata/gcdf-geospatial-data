@@ -1,6 +1,6 @@
 # Examples
 
-This folder contains examples of how this dataset, and specifically the OpenStreetMap geospatial features, can be used.
+This folder contains examples of how this dataset, and specifically the OpenStreetMap (OSM) geospatial features, can be used.
 
 Please note that these are examples only are may require additional steps to replicate.
 - The Python packages utilized in these examples may not be included in the requirements
@@ -11,10 +11,21 @@ repository. However, they can all be easily installed using Anaconda.
 as well before using.
 - Software such as [QGIS](https://www.qgis.org/) may be used to visualize or explore data. QGIS is free and open source, and there are many tutorials available online to help with installation and use
 
-## Nighttime Lights Analysis (ntl_demo)
 
-This examples provides a demonstration of how the OpenStreetMap features provided with AidData's
-Chinese Finance dataset can be used to generate a set of visualizations and statistics associated with
+## Understanding How Project Geospatial Features are Derived from OpenStreetMap ([features_intro](features_intro))
+
+In this example we will explore the basic methodology used to extract features from OpenStreetMap and produce the geospatial features associated with projects in AidData's Global Chinese Development Finance Dataset. We will begin by exploring the types and format of geospatial data available from OSM (e.g., nodes, ways, relations, as well as driving directions), and then review how that data is converted into a standardized collection of MultiPolygon features.
+
+
+## Laos Maps ([laos_maps](laos_maps))
+
+This example shows how [QGIS](https://qgis.org) can be used to produce visualizations of geospatial features from AidData's Global Chinese Development Finance Dataset. A subset of project data for Laos is included, along with a pre-built QGIS project that can be loaded and explored on your own computer. Using pre-built QGIS layouts, we produce visualizations of projects in Laos at the country level as well as around the capital region of Vientiane.
+
+
+## Nighttime Lights Analysis ([ntl_demo](ntl_demo))
+
+This examples provides a demonstration of how the geospatial features provided with AidData's Global
+Chinese Finance Dataset can be used to generate a set of visualizations and statistics associated with
 changed in nighttime lights (NTL).
 
 We will use a small set of features associated with Chinese funded projects,
@@ -24,7 +35,7 @@ be evaluating using NTL data within a 5km buffer of the project sites.
 Based on the approximate implementation date of 2016/2017, we will evaluate trends
 and levels of NTL between 2014-2017 and 2017-2020.
 
-The example will produce a set of statistic interpretations of the impact of the project
+The example will produce a set of statistical interpretations of the impact of the project
 on NTL levels, as well as visualizations of the change in NTL trends over time.
 
 
