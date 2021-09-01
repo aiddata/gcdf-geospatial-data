@@ -9,8 +9,7 @@ This repository allows you to:
 
 <br/>
 
-### To download the latest data, click [HERE](input_data/2.0release/PLACEHOLDER.xlsx)
-
+### [Download AidData’s Global Chinese Development Finance Dataset](https://aiddata.org/data)
 
 
 <br/>
