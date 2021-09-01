@@ -12,7 +12,7 @@ This repository allows you to:
 ### [Download AidData’s Global Chinese Development Finance Dataset](https://aiddata.org/data)
 
 
-### [Download the accompanying geospatial dataset](latest/development_combined_global.geojson.zip)
+### [Download the accompanying geospatial dataset](https://github.com/aiddata/china-osm-geodata/raw/master/latest/development_combined_global.geojson.zip)
 
 
 <br/>
