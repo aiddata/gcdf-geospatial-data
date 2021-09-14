@@ -875,7 +875,7 @@ if __name__ == "__main__":
         print(i)
         subgrouped_df = grouped_df[grouped_df.finance_type == i].copy()
         geom_list = subgrouped_df["multipolygon"].apply(lambda mp: mp.__geo_interface__)
-        props_list = grouped_df.apply(lambda x: prepare_properties(x), axis=1)
+        props_list = subgrouped_df.apply(lambda x: prepare_properties(x), axis=1)
         path = os.path.join(results_dir, f"{i}_combined_global.geojson")
         output_multi_feature_geojson(geom_list, props_list, path)
 
