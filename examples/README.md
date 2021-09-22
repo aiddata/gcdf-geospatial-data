@@ -22,6 +22,11 @@ In this example we will explore the basic methodology used to extract features f
 This example shows how [QGIS](https://qgis.org) can be used to produce visualizations of geospatial features from AidData's Global Chinese Development Finance Dataset. A subset of project data for Laos is included, along with a pre-built QGIS project that can be loaded and explored on your own computer. Using pre-built QGIS layouts, we produce visualizations of projects in Laos at the country level as well as around the capital region of Vientiane.
 
 
+## Pakistan Maps ([pakistan_maps](pakistan_maps))
+
+This example shows how [QGIS](https://qgis.org) can be used to produce visualizations of geospatial features from AidData's Global Chinese Development Finance Dataset. A subset of project data for Pakistan is included, along with a pre-built QGIS project that can be loaded and explored on your own computer. Using pre-built QGIS layouts, we produce visualizations of projects in Pakistan at the country level as well as around Islamabad, Gwadar, and Karachi.
+
+
 ## Nighttime Lights Analysis ([ntl_demo](ntl_demo))
 
 This examples provides a demonstration of how the geospatial features provided with AidData's Global
