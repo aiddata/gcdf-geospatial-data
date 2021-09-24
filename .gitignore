@@ -17,4 +17,5 @@ test.csv
 directions_parser.py
 examples/ntl_demo/viirs_ntl
 examples/ntl_demo/viirs_ntl_monthly
+examples/generate_buffers/*.geojson
 latest/*.geojson
