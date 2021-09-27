@@ -43,5 +43,11 @@ and levels of NTL between 2014-2017 and 2017-2020.
 The example will produce a set of statistical interpretations of the impact of the project
 on NTL levels, as well as visualizations of the change in NTL trends over time.
 
+## Generate Buffers Around Project Features ([generate_buffers](generate_buffers))
+
+The Python code provided in this example generated buffers of varying sizes around the geospatial features and saves them as new GeoJSON files.
 
 
+## Project Feature Rasterization ([rasterize](rasterize))
+
+The Python code in this example can be used to produce gridded surfaces (rasters) based on the dollar value of project commitments. Only projects with geospatial features can be rasterized. The rasterized surface is produced for all projects with geospatial features, as well as subsets based on sector.
