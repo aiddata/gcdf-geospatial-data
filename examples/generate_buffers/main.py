@@ -32,8 +32,7 @@ gdf = gdf.set_crs(epsg=4326)
 
 # optional step: simplify 3 outliers with very large geometries
 big_geoms = [178, 56959, 695]
-for i in big_geoms:
-    gdf.loc[gdf.id == i, 'geometry'] = gdf.loc[gdf.id == i, 'geometry'].simplify(0.00001)
+gdf.loc[gdf.id.isin(big_geoms), 'geometry'] = gdf.loc[gdf.id.isin(big_geoms), 'geometry'].simplify(0.00001)
 
 
 # convert to equal area projection for more accurate buffers
