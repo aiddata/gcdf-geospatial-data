@@ -9,22 +9,28 @@ from rasterio.windows import Window
 
 
 class Grid():
-    """Manage grid
+    """Manage grid of data (raster) produced while rasterizing geometries
 
-    Creates empty raster on initialization using
-    essential geometry properties (bounds, shape, pixel_size)
+    Creates empty raster on initialization using geometry properties (bounds, shape, pixel_size)
 
-    Updates raster with data using boundary information
+    Updates raster in place with data for indivudal rasterized geometries
+        - By continually updating the raster with new data from only a single
+        geometry at a time, we can avoid storing a very large array representing
+        the full dataset in memory.
     """
     def __init__(self, geom, pixel_size, dtype='uint32', nodata_val=0):
+        # input args
         self.pixel_size = None
         self.dtype = dtype
         self.nodata_val = nodata_val
+        # class attributes to be defined during init
         self.shape = None
         self.bounds = None
         self.affine = None
+        # initialize class
         self.set_pixel_size(pixel_size)
         self.init_grid(geom)
+        # temporary raster path used during processing
         self.init_raster_path = "blank_raster.tif"
         self.init_raster()
 
