@@ -149,6 +149,7 @@ Notes:
     - `from_existing_timestamp`: When `from_existing` is set to `True`, this is the timestamp used to create the directory of the output data (e.g., `./output_data/<release_name>/results/<timestamp>`) that will be used to instantiate the current run
     - `prepare_only`: Boolean value indicating whether only the preliminary stage of data preparation will be run. See details in section below for use cases.
     - `id_field`, `location_field`, and `osm_str`: These are static variables that should not be changed for replication, yet are made available to support adapting this code for additional datasets in the future. `id_field` is a unique ID field in the input data, `location_field` is the field containing OSM links, and `osm_str` is the string used to identify OSM links.
+    - `update_mode` (bool) can be used run a limited build for updating specific projects. `update_ids` is a list of project IDs to update, and  `update_timestamp` is a previous build's timestamp which the updates will be part of. For example, with update_mode = True, update_ids = [123], and update_timestamp = 2021_10_31_23_59, the build will utilize the input data (which has been updated to reflect any changes), and will process only project ID 123. Once project 123 is processed, all other projects from the build with timestamp 2020_10_31_23_59 will be copied into the updated build.
 
 
 ### Run Code
