@@ -26,6 +26,7 @@ from bs4 import BeautifulSoup as BS
 from shapely.geometry import Point, Polygon, LineString, MultiPolygon
 from shapely.ops import cascaded_union
 import pandas as pd
+import geopandas as gpd
 
 import overpass
 from overpass.errors import TimeoutError, ServerLoadError, MultipleRequestsError
@@ -570,6 +571,10 @@ if __name__ == "__main__":
     from_existing = config.getboolean('main', "from_existing")
     from_existing_timestamp = config["main"]["from_existing_timestamp"]
 
+    update_mode = config.getboolean('main', "update_mode")
+    if update_mode:
+        update_ids = json.loads(config['main']["update_ids"])
+        update_timestamp = config['main']["update_timestamp"]
 
     if from_existing:
         from_existing_path = base_dir / "output_data" / release_name / "results" / from_existing_timestamp / "feature_df.csv"
@@ -585,6 +590,9 @@ if __name__ == "__main__":
 
         loc_df = raw_df[[id_field, location_field]].copy(deep=True)
         loc_df.columns = ["id", "location"]
+
+        if update_mode:
+            loc_df = loc_df[loc_df["id"].isin(update_ids)]
 
         loc_df_not_null = loc_df.loc[~loc_df.location.isnull()]
         osm_df = loc_df_not_null.loc[loc_df_not_null.location.str.contains(osm_str)].copy()
@@ -603,7 +611,7 @@ if __name__ == "__main__":
         filtered_df = osm_df.loc[~osm_df.index.isin(errors_df.index)].copy(deep=True)
 
 
-        print("{} out of {} projects contain OSM link(s)".format(len(osm_df), len(raw_df)))
+        print("{} out of {} projects contain OSM link(s)".format(len(osm_df), len(loc_df)))
 
         print("{} out of {} projects with OSM link(s) had at least 1 non-parseable link ({} valid)".format(len(errors_df), len(osm_df), len(filtered_df)))
 
@@ -862,32 +870,35 @@ if __name__ == "__main__":
         build_feature(row)
 
 
-    # combine all MultiPolygons into one GeoJSON with properties
+    if update_mode:
+        # copy geojsons from update_timestamp geojsons dir to current timestamp geojsons dir
+        update_target_geojsons = base_dir / "output_data" / release_name / "results" / update_timestamp / "geojsons"
+        for gj in update_target_geojsons.iterdir():
+            if int(gj.name.split(".")[0]) not in grouped_df.tuff_id.values:
+                shutil.copy(gj, results_dir / "geojsons")
 
-    geom_list = grouped_df["multipolygon"].apply(lambda mp: mp.__geo_interface__)
-    props_list = grouped_df.apply(lambda x: prepare_properties(x), axis=1)
-    path = os.path.join(results_dir, "all_combined_global.geojson")
 
-    output_multi_feature_geojson(geom_list, props_list, path)
+    # create combined GeoJSON for all data and for each finance type
+    combined_gdf = pd.concat([gpd.read_file(gj) for gj in (results_dir / "geojsons").iterdir()])
 
-    # create combined GeoJSON for each finance type
-    for i in set(grouped_df.finance_type):
+    combined_gdf.to_file(results_dir / "all_combined_global.geojson", driver="GeoJSON")
+    for i in set(combined_gdf.finance_type):
         print(i)
-        subgrouped_df = grouped_df[grouped_df.finance_type == i].copy()
-        geom_list = subgrouped_df["multipolygon"].apply(lambda mp: mp.__geo_interface__)
-        props_list = subgrouped_df.apply(lambda x: prepare_properties(x), axis=1)
-        path = os.path.join(results_dir, f"{i}_combined_global.geojson")
-        output_multi_feature_geojson(geom_list, props_list, path)
+        subgrouped_df = combined_gdf[combined_gdf.finance_type == i].copy()
+        subgrouped_df.to_file(results_dir / f"{i}_combined_global.geojson", driver="GeoJSON")
+
 
 
     # add github geojson url to df and save to csv
-    grouped_df["viz_geojson_url"] = grouped_df.tuff_id.apply(lambda x: f"https://github.com/aiddata/china-osm-geodata/blob/master/latest/geojsons/{x}.geojson")
-    grouped_df["dl_geojson_url"] = grouped_df.tuff_id.apply(lambda x: f"https://raw.githubusercontent.com/aiddata/china-osm-geodata/master/latest/geojsons/{x}.geojson")
+    combined_gdf["viz_geojson_url"] = combined_gdf.id.apply(lambda x: f"https://github.com/aiddata/china-osm-geodata/blob/master/latest/geojsons/{x}.geojson")
+    combined_gdf["dl_geojson_url"] = combined_gdf.id.apply(lambda x: f"https://raw.githubusercontent.com/aiddata/china-osm-geodata/master/latest/geojsons/{x}.geojson")
 
     drop_cols = ['tuff_id', 'feature_list', 'multipolygon', 'feature_count', 'geojson_path']
-    grouped_df[[i for i in grouped_df.columns if i not in drop_cols]].to_csv(os.path.join(results_dir, "final_df.csv"), index=False)
+    combined_gdf[[i for i in combined_gdf.columns if i not in drop_cols]].to_csv(os.path.join(results_dir, "final_df.csv"), index=False)
 
     print(f"Dataset complete: {timestamp}")
     print(f"\t{results_dir}")
     print(f"To set this as latest dataset: \n\t bash {base_dir}/set_latest.sh {release_name} {timestamp}")
+
+
 
