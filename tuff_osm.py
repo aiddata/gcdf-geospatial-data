@@ -893,7 +893,7 @@ if __name__ == "__main__":
     combined_gdf["viz_geojson_url"] = combined_gdf.id.apply(lambda x: f"https://github.com/aiddata/china-osm-geodata/blob/master/latest/geojsons/{x}.geojson")
     combined_gdf["dl_geojson_url"] = combined_gdf.id.apply(lambda x: f"https://raw.githubusercontent.com/aiddata/china-osm-geodata/master/latest/geojsons/{x}.geojson")
 
-    drop_cols = ['tuff_id', 'feature_list', 'multipolygon', 'feature_count', 'geojson_path']
+    drop_cols = ['tuff_id', 'feature_list', 'multipolygon', 'feature_count', 'geojson_path', 'geometry']
     combined_gdf[[i for i in combined_gdf.columns if i not in drop_cols]].to_csv(os.path.join(results_dir, "final_df.csv"), index=False)
 
     print(f"Dataset complete: {timestamp}")
