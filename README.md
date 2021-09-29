@@ -9,7 +9,7 @@ This repository allows you to:
 
 <br/>
 
-### [Download AidData’s Global Chinese Development Finance Dataset](https://aiddata.org/data)
+### [Download AidData’s Global Chinese Development Finance Dataset](https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-2-0)
 
 
 ### [Download the accompanying geospatial dataset](https://github.com/aiddata/china-osm-geodata/raw/master/latest/development_combined_global.geojson.zip)
@@ -43,9 +43,12 @@ Any use of the dataset and its content must include appropriate attribution to A
 Please see the [LICENSE file](LICENSE.md) for human-readable summaries of both ODC-By and ODbL, and links to the full licenses.
 
 
-The following citation may be used to credit AidData:
+The following citations may be used to credit AidData (Please note: Both works count as the official citation for this dataset):
 ```
-TBD
+Custer, S., Dreher, A., Elston, T.B., Fuchs, A., Ghose, S., Lin, J., Malik, A., Parks, B.C., Russell, B., Solomon, K., Strange, A., Tierney, M.J., Walsh, K., Zaleski, L., and Zhang, S. 2021. Tracking Chinese Development Finance: An Application of AidData’s TUFF 2.0 Methodology. Williamsburg, VA: AidData at William & Mary.
+
+Dreher, A., Fuchs, A., Parks, B. C., Strange, A., & Tierney, M.J. (Forthcoming). Banking on Beijing: The Aims and Impacts of China’s Overseas Development Program. Cambridge, UK: Cambridge University Press.
+
 ```
 
 OpenStreetMap may be credited using `© OpenStreetMap contributors` or by linking to their copyright page ([https://www.openstreetmap.org/copyright](https://www.openstreetmap.org/copyright))
