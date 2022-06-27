@@ -100,7 +100,7 @@ When using Conda, you will typically want to unset the `PYTHONPATH` variable, e.
 ```
 conda create -n china_osm python=3.8
 conda activate china_osm
-conda install -c conda-forge bs4 shapely pandas selenium==3.141.0 openpyxl
+conda install -c conda-forge bs4 shapely pandas geopandas selenium==3.141.0 openpyxl prefect
 pip install osm2geojson==0.1.29 overpass
 # Only required if using mpi4py for parallel processing (e.g., on W&M's HPC)
 pip install mpi4py
@@ -113,6 +113,9 @@ Notes:
 - pip was needed to install osm2geojson in order to get newer version (may be available through latest conda, but not tested in our build)
 - If parallel processing, pip is needed to install mpi4py based on system build of mpi (e.g., OpenMPI)
     - Warning: if you do not use parallel processing this can take a significant amount of time to run for the full dataset.
+
+Add the path to where you cloned the repo to your Conda environment:
+`conda develop /path/to/china-osm-geodata`
 
 
 2. Install FireFox binary and geckodriver locally.
