@@ -26,10 +26,10 @@ sector_field = 'AidData Sector Name'
 # sector names to use for filtering (values)
 # and short names for output filenames (keys)
 sector_list = {
-    # "all": "all",
-    "transport": "TRANSPORT AND STORAGE",
-    "energy": "ENERGY",
-    "industry": "INDUSTRY, MINING, CONSTRUCTION"
+    "all": "all",
+    # "transport": "TRANSPORT AND STORAGE",
+    # "energy": "ENERGY",
+    # "industry": "INDUSTRY, MINING, CONSTRUCTION"
 }
 
 
@@ -54,6 +54,7 @@ big_geoms = [178, 56959, 695]
 gdf.loc[gdf.id.isin(big_geoms), 'geometry'] = gdf.loc[gdf.id.isin(big_geoms), 'geometry'].simplify(0.00001)
 
 # drop projects with no data for val_field
+gdf[val_field] = gdf[val_field].fillna(0).astype(float)
 gdf_valid = gdf.loc[gdf[val_field] > 0].copy()
 
 print(f"Total project count with valid commitment values: {len(gdf_valid)}")
@@ -80,7 +81,7 @@ gdf_rasterize = gdf_valid[['id', 'geometry', sector_field, val_field]].copy()
 # output directory for rasterizations
 os.makedirs("rasters", exist_ok=True)
 
-pixel_size = 0.001
+pixel_size = 0.01
 
 # geometry which defines the full extent of the final raster
 full_geom = box(-180, -90, 180, 90)
