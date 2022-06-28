@@ -72,9 +72,8 @@ timestamp = utils.get_current_timestamp('%Y_%m_%d_%H_%M')
 
 
 # directory where all outputs will be saved
-output_dir = base_dir / "output_data" / release_name
-results_dir = output_dir / "results" / timestamp
-os.makedirs(os.path.join(results_dir, "geojsons"), exist_ok=True)
+output_dir = base_dir / "output_data" / release_name / "results" / timestamp
+(output_dir, "geojsons").mkdir(parents=True, exist_ok=True)
 
 api = utils.init_overpass_api()
 
@@ -88,11 +87,11 @@ if __name__ == "__main__":
 
     input_data_df = utils.load_input_data(base_dir, release_name)
 
-    link_df_path = results_dir / "osm_links.csv"
-    feature_prep_df_path = results_dir / "feature_prep.csv"
+    link_df_path = output_dir / "osm_links.csv"
+    feature_prep_df_path = output_dir / "feature_prep.csv"
 
     if from_existing:
-        full_feature_prep_df = utils.init_existing(results_dir, from_existing_timestamp)
+        full_feature_prep_df = utils.init_existing(output_dir, from_existing_timestamp)
 
     else:
         link_df = utils.get_osm_links(input_data_df, id_field, location_field, osm_str, invalid_str_list, update_ids)
@@ -122,10 +121,10 @@ if __name__ == "__main__":
     print(feature_prep_df.osm_type.value_counts())
 
     # get svg path for osm "directions" links
-    results = utils.generate_svg_paths(feature_prep_df, overwrite=False)
+    svg_results = utils.generate_svg_paths(feature_prep_df, overwrite=False)
 
     # join svg paths back to dataframe
-    for unique_id, svg_path in results:
+    for unique_id, svg_path in svg_results:
         feature_prep_df.loc[unique_id, "svg_path"] = svg_path
 
 
@@ -139,7 +138,7 @@ if __name__ == "__main__":
 
     # -------------------------------------
     # -------------------------------------
-    
+
 
     def gen_flist(df):
         # generate list of tasks to iterate over
@@ -232,7 +231,7 @@ if __name__ == "__main__":
     grouped_df["multipolygon"] = grouped_df.feature_list.apply(lambda mp_list: unary_union([p for mp in mp_list for p in mp.geoms]))
     grouped_df["multipolygon"] = grouped_df.multipolygon.apply(lambda x: MultiPolygon([x]) if x.type == "Polygon" else x)
     grouped_df["feature_count"] = grouped_df.feature_list.apply(lambda mp: len(mp))
-    grouped_df["geojson_path"] = grouped_df.project_id.apply(lambda x: os.path.join(results_dir, "geojsons", f"{x}.geojson"))
+    grouped_df["geojson_path"] = grouped_df.project_id.apply(lambda x: os.path.join(output_dir, "geojsons", f"{x}.geojson"))
 
 
     # join original project fields back to be included in geojson properties
@@ -251,11 +250,11 @@ if __name__ == "__main__":
         update_target_geojsons = base_dir / "output_data" / release_name / "results" / update_timestamp / "geojsons"
         for gj in update_target_geojsons.iterdir():
             if int(gj.name.split(".")[0]) not in grouped_df.project_id.values:
-                shutil.copy(gj, results_dir / "geojsons")
+                shutil.copy(gj, output_dir / "geojsons")
 
     # -----
     # create combined GeoJSON for all data
-    combined_gdf = pd.concat([gpd.read_file(gj) for gj in (results_dir / "geojsons").iterdir()])
+    combined_gdf = pd.concat([gpd.read_file(gj) for gj in (output_dir / "geojsons").iterdir()])
 
     # add github geojson urls
     combined_gdf["viz_geojson_url"] = combined_gdf.id.apply(lambda x: f"https://github.com/{github_name}/{github_repo}/blob/{github_branch}/latest/geojsons/{x}.geojson")
@@ -266,26 +265,26 @@ if __name__ == "__main__":
         if c.endswith("Date (MM/DD/YYYY)"):
             combined_gdf[c] = combined_gdf[c].apply(lambda x: str(x))
 
-    combined_gdf.to_file(results_dir / "all_combined_global.geojson", driver="GeoJSON")
+    combined_gdf.to_file(output_dir / "all_combined_global.geojson", driver="GeoJSON")
 
     # -----
     # create combined GeoJSON  for each finance type
     for i in set(combined_gdf.finance_type):
         print(i)
         subgrouped_df = combined_gdf[combined_gdf.finance_type == i].copy()
-        subgrouped_df.to_file(results_dir / f"{i}_combined_global.geojson", driver="GeoJSON")
+        subgrouped_df.to_file(output_dir / f"{i}_combined_global.geojson", driver="GeoJSON")
 
 
     # -----
     # create final csv
     drop_cols = ['project_id', 'feature_list', 'multipolygon', 'feature_count', 'geojson_path', 'geometry']
-    combined_gdf[[i for i in combined_gdf.columns if i not in drop_cols]].to_csv(os.path.join(results_dir, "final_df.csv"), index=False)
+    combined_gdf[[i for i in combined_gdf.columns if i not in drop_cols]].to_csv(os.path.join(output_dir, "final_df.csv"), index=False)
 
 
     # -----
     # final summary output
     print(f"""
     Dataset complete: {timestamp}
-    \t{results_dir}
+    \t{output_dir}
     To set this as latest dataset: \n\t bash {base_dir}/set_latest.sh {release_name} {timestamp}
     """)
