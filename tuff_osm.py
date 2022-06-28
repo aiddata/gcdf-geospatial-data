@@ -113,12 +113,12 @@ if __name__ == "__main__":
         # get osm links from location field
         link_df["osm_list"] = link_df.location.apply(lambda x: utils.split_and_match_text(x, " ", osm_str))
         # save dataframe with osm links to csv
-        link_df.to_csv(os.path.join(results_dir, "osm_links.csv"), index=False, encoding="utf-8")
+        link_df.to_csv(link_df_path, index=False, encoding="utf-8")
 
         # save all rows invalid osm links to separate csv that can be referenced for fixes
         invalid_str_list = ["search", "query"]
         invalid_link_df = link_df.loc[link_df.osm_list.apply(lambda x: any(i in str(x) for i in invalid_str_list))].copy(deep=True)
-        invalid_link_df.to_csv(os.path.join(results_dir, "osm_invalid_links.csv"), index=False, encoding="utf-8")
+        invalid_link_df.to_csv(invalid_link_df_path, index=False, encoding="utf-8")
 
         # drop all rows with invalid osm links
         valid_link_df = link_df.loc[~link_df.index.isin(invalid_link_df.index)].copy(deep=True)
@@ -159,7 +159,6 @@ if __name__ == "__main__":
         driver.quit()
 
 
-    feature_prep_df_path = os.path.join(results_dir, "feature_prep.csv")
     feature_prep_df.to_csv(feature_prep_df_path, index=False)
 
 
