@@ -72,14 +72,14 @@ def load_input_data(base_dir, release_name):
     return input_data
 
 
-def init_existing(results_dir, existing_timestamp):
-    existing_dir = results_dir.parent / existing_timestamp
+def init_existing(output_dir, existing_timestamp):
+    existing_dir = output_dir.parent / existing_timestamp
     existing_link_df_path = existing_dir / "osm_valid_links.csv"
     existing_feature_prep_df_path = existing_dir / "feature_prep.csv"
 
     full_feature_prep_df = pd.read_csv(existing_feature_prep_df_path)
 
-    link_df_path = results_dir / "osm_links.csv"
+    link_df_path = output_dir / "osm_links.csv"
 
     # copy previously generated files to directory for current run
     shutil.copyfile(existing_link_df_path, link_df_path)
@@ -588,6 +588,34 @@ def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path, api):
     else:
         raise Exception(f"Invalid OSM type in link ({osm_type})", unique_id, None)
     return feat
+
+
+def process_results(tasl_results, valid_df, errors_df, merge_df):
+    # ---------
+    # column name for join field in original df
+    results_join_field_name = "unique_id"
+    # position of join field in each tuple in task list
+    results_join_field_loc = 0
+    # ---------
+
+    # join function tasl_results back to df
+    results_df = pd.DataFrame(tasl_results, columns=["status", "message", results_join_field_name, "feature"])
+    # results_df.drop(["feature"], axis=1, inplace=True)
+    results_df[results_join_field_name] = results_df[results_join_field_name].apply(lambda x: x[results_join_field_loc])
+
+    output_df = merge_df.merge(results_df, on=results_join_field_name, how="left")
+
+
+    if valid_df is None:
+        valid_df = output_df[output_df["status"] == 0].copy()
+    else:
+        valid_df = pd.concat([valid_df, output_df.loc[output_df.status == 0]])
+
+
+    errors_df = output_df[output_df["status"] > 0].copy()
+    print("\t{} errors found out of {} tasks".format(len(errors_df), len(output_df)))
+
+    return valid_df, errors_df
 
 
 def write_json_to_file(json_dict, path, **kwargs):

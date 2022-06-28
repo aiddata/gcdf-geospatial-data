@@ -157,6 +157,10 @@ if __name__ == "__main__":
 
 
     print("Running feature generation")
+    # get_osm_feat for each row in feature_prep_df
+    #     - parallelize
+    #     - buffer lines/points to create polygons
+    #     - convert all features to multipolygons
 
     valid_df = None
     errors_df = None
@@ -164,55 +168,29 @@ if __name__ == "__main__":
     while errors_df is None or len(errors_df) > 0:
 
         iteration += 1
+        # handle potential memory / task conflict issues by reducing workers as attempts increase
+        iter_max_workers = math.ceil(max_workers / iteration)
 
         if errors_df is not None:
             flist = gen_flist(errors_df)
 
-        # get_osm_feat for each row in feature_prep_df
-        #     - parallelize
-        #     - buffer lines/points
-        #     - convert all features to multipolygons
-
-        # results = []
+        # task_results = []
         # for result in run_tasks(get_osm_feat, flist, parallel, max_workers=max_workers, chunksize=1, unordered=True):
-        #     results.append(result)
-        iter_max_workers = math.ceil(max_workers / iteration)
+        #     task_results.append(result)
 
-        results = utils.run_tasks(utils.get_osm_feat, flist, parallel, max_workers=iter_max_workers, chunksize=1)
+        task_results = utils.run_tasks(utils.get_osm_feat, flist, parallel, max_workers=iter_max_workers, chunksize=1)
 
-        # ---------
-        # column name for join field in original df
-        results_join_field_name = "unique_id"
-        # position of join field in each tuple in task list
-        results_join_field_loc = 0
-        # ---------
-
-        # join function results back to df
-        results_df = pd.DataFrame(results, columns=["status", "message", results_join_field_name, "feature"])
-        # results_df.drop(["feature"], axis=1, inplace=True)
-        results_df[results_join_field_name] = results_df[results_join_field_name].apply(lambda x: x[results_join_field_loc])
-
-        output_df = feature_prep_df.merge(results_df, on=results_join_field_name, how="left")
-
-
-        if valid_df is None:
-            valid_df = output_df[output_df["status"] == 0].copy()
-        else:
-            valid_df = pd.concat([valid_df, output_df.loc[output_df.status == 0]])
-
-
-        errors_df = output_df[output_df["status"] > 0].copy()
-        print("\t{} errors found out of {} tasks".format(len(errors_df), len(output_df)))
+        valid_df, errors_df = utils.process_results(task_results, valid_df, errors_df, feature_prep_df)
 
         if iter_max_workers == 1 or iteration >= 5 or len(set(errors_df.message)) == 1 and "IndexError" in list(set(errors_df.message))[0]:
             break
 
 
-    errors_df.to_csv(os.path.join(results_dir, "processing_errors_df.csv"), index=False)
+    errors_df.to_csv(os.path.join(output_dir, "processing_errors_df.csv"), index=False)
 
     # output valid results to csv
-    valid_df[[i for i in valid_df.columns if i != "feature"]].to_csv(results_dir / "valid_df.csv", index=False)
-    valid_df.to_csv(results_dir / "valid_gdf.csv", index=False)
+    valid_df[[i for i in valid_df.columns if i != "feature"]].to_csv(output_dir / "valid_df.csv", index=False)
+    valid_df.to_csv(output_dir / "valid_gdf.csv", index=False)
 
 
     # -------------------------------------
