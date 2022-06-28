@@ -289,8 +289,7 @@ def get_soup(url, pretty_print=False, timeout=60):
     return soup
 
 
-
-def get_node(clean_link):
+def get_node_geom(clean_link):
     """Manage getting OSM node coordinates from OSM feature url
 
     Uses historical version of node URL if current URL no longer exists
@@ -328,6 +327,26 @@ def build_node_geom(soup):
     return feat
 
 
+def get_way_geom(clean_link):
+    try:
+        soup = get_soup(clean_link)
+        feat = build_way_geom(soup)
+    except Exception as e:
+        print(f"\tusing old way version: {clean_link} \n\t\t {repr(e)}")
+        soup = get_soup(clean_link)
+        details = soup.find_all('div', {'class': 'details'})
+        if "Deleted" not in details[0].text:
+            print(f"\tNo previous way version found ({osm_id})")
+            raise
+        history_link = clean_link + "/history"
+        soup = get_soup(history_link)
+        history_soup = soup.find_all('div', {'class': 'browse-way'})
+        # currently just grabs first historical version, but
+        # could need to iterate if that version was bad for some reason
+        feat = build_way_geom(history_soup[1])
+    return feat
+
+
 def build_way_geom(soup):
     """Reconstruct a way geometry
 
@@ -345,7 +364,7 @@ def build_way_geom(soup):
     for node in node_ids:
         # build url for specific node
         node_url = f"https://www.openstreetmap.org/node/{node}"
-        node_feat = get_node(node_url)
+        node_feat = get_node_geom(node_url)
         node_coords = node_feat.coords[0]
         coords.append(node_coords)
     # generate geojson compatible geometry string for feature
@@ -355,6 +374,16 @@ def build_way_geom(soup):
         feat = Polygon(coords)
     else:
         feat = LineString(coords)
+    return feat
+
+
+def get_relation_geom(osm_id, osm_type, api):
+    # add OSM url check to make sure relation is still current
+    # if not, does overpass allow us to access deleted/historical versions?
+    #
+    result = get_from_overpass(osm_id, osm_type, api)
+    geo_list = osm2geojson.json2shapes(result)
+    feat = unary_union([geom["shape"].buffer(0.00001) for geom in geo_list])
     return feat
 
 
@@ -416,7 +445,7 @@ def calculate_unit_size(start, end, first, last):
     return lon_unit_val, lat_unit_val
 
 
-def build_directions_geom(url, d):
+def get_directions_geom(url, d):
     """Build a shapely LineString from the SVG path data in the url
 
     Args:
@@ -466,6 +495,59 @@ def build_directions_geom(url, d):
             ))
     # convert coords to shapely feature
     feat = LineString(final_coords)
+    return feat
+
+
+def convert_osm_feat_to_multipolygon(fn):
+    """Buffer a shapely geometry to create a Polygon if not already a Polygon or MultiPolygon
+
+    Args:
+        shapely.geometry.base.BaseGeometry: shapely geometry
+
+    Returns:
+        shapely.geometry.base.BaseGeometry: shapely Polygon or MultiPolygon
+    """
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        feat = fn(*args, **kwargs)
+        if feat.type != "MultiPolygon":
+            feat = MultiPolygon([feat])
+        return feat
+    return wrapper
+
+
+def buffer_osm_feat(fn):
+    """Buffer a shapely geometry to create a Polygon if not already a Polygon or MultiPolygon
+
+    Args:
+        shapely.geometry.base.BaseGeometry: shapely geometry
+
+    Returns:
+        shapely.geometry.base.BaseGeometry: shapely Polygon or MultiPolygon
+    """
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        feat = fn(*args, **kwargs)
+        if feat.type not in ["Polygon", "MultiPolygon"]:
+            feat = feat.buffer(0.00001)
+        return feat
+    return wrapper
+
+
+@convert_osm_feat_to_multipolygon
+@buffer_osm_feat
+def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path, api):
+    print(unique_id, osm_type)
+    if osm_type == "directions":
+        feat = get_directions_geom(clean_link, svg_path)
+    elif osm_type == "node":
+        feat = get_node_geom(clean_link)
+    elif osm_type == "way":
+        feat = get_way_geom(clean_link)
+    elif osm_type == "relation":
+        feat = get_relation_geom(osm_id, osm_type, api)
+    else:
+        raise Exception(f"Invalid OSM type in link ({osm_type})", unique_id, None)
     return feat
 
 
@@ -550,80 +632,6 @@ def output_multi_feature_geojson(geom_list, props_list, path):
         "features": features,
     }
     write_json_to_file(geojson_dict, path)
-
-
-def convert_osm_feat_to_multipolygon(fn):
-    """Buffer a shapely geometry to create a Polygon if not already a Polygon or MultiPolygon
-
-    Args:
-        shapely.geometry.base.BaseGeometry: shapely geometry
-
-    Returns:
-        shapely.geometry.base.BaseGeometry: shapely Polygon or MultiPolygon
-    """
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        feat = fn(*args, **kwargs)
-        if feat.type != "MultiPolygon":
-            feat = MultiPolygon([feat])
-        return feat
-    return wrapper
-
-
-def buffer_osm_feat(fn):
-    """Buffer a shapely geometry to create a Polygon if not already a Polygon or MultiPolygon
-
-    Args:
-        shapely.geometry.base.BaseGeometry: shapely geometry
-
-    Returns:
-        shapely.geometry.base.BaseGeometry: shapely Polygon or MultiPolygon
-    """
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        feat = fn(*args, **kwargs)
-        if feat.type not in ["Polygon", "MultiPolygon"]:
-            feat = feat.buffer(0.00001)
-        return feat
-    return wrapper
-
-
-@convert_osm_feat_to_multipolygon
-@buffer_osm_feat
-def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path, api):
-    print(unique_id, osm_type)
-    if osm_type == "directions":
-        # feat = build_directions_geom(clean_link, driver)
-        feat = build_directions_geom(clean_link, svg_path)
-    elif osm_type == "node":
-        feat = get_node(clean_link)
-    elif osm_type == "way":
-        try:
-            soup = get_soup(clean_link)
-            feat = build_way_geom(soup)
-        except Exception as e:
-            print(f"\tusing old way version: {clean_link} \n\t\t {repr(e)}")
-            soup = get_soup(clean_link)
-            details = soup.find_all('div', {'class': 'details'})
-            if "Deleted" not in details[0].text:
-                print(f"\tNo previous way version found ({osm_id})")
-                raise
-            history_link = clean_link + "/history"
-            soup = get_soup(history_link)
-            history_soup = soup.find_all('div', {'class': 'browse-way'})
-            # currently just grabs first historical version, but
-            # could need to iterate if that version was bad for some reason
-            feat = build_way_geom(history_soup[1])
-    elif osm_type == "relation":
-        # add OSM url check to make sure relation is still current
-        # if not, does overpass allow us to access deleted/historical versions?
-        #
-        result = get_from_overpass(osm_id, osm_type, api)
-        geo_list = osm2geojson.json2shapes(result)
-        feat = unary_union([geom["shape"].buffer(0.00001) for geom in geo_list])
-    else:
-        raise Exception(f"Invalid OSM type in link ({osm_type})", unique_id, None)
-    return feat
 
 
 def _task_wrapper(func, args):
