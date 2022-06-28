@@ -134,11 +134,9 @@ if __name__ == "__main__":
         full_feature_prep_df = utils.classify_osm_links(valid_link_df)
 
 
-    if sample_size <= 0:
-        feature_prep_df = full_feature_prep_df.copy(deep=True)
-    else:
-        feature_prep_df = utils.sample_features(full_feature_prep_df, sample_size=sample_size)
 
+    # option to sample data for testing; sample size <=0 returns full dataset
+    feature_prep_df = utils.sample_features(full_feature_prep_df, sample_size=2)
 
     if "directions" in set(feature_prep_df.loc[feature_prep_df.svg_path.isnull(), "osm_type"]):
 

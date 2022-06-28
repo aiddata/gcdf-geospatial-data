@@ -71,7 +71,6 @@ def get_current_timestamp(format_str=None):
     return timestamp
 
 
-
 def split_and_match_text(text, split, match):
     """Split a string and return matching elements
 
@@ -85,9 +84,6 @@ def split_and_match_text(text, split, match):
     """
     link_list = [i for i in text.split(split) if match in i]
     return link_list
-
-
-
 
 
 """
@@ -156,7 +152,12 @@ def classify_osm_links(filtered_df):
 def sample_features(df, sample_size):
     """sample features from each osm link type
     """
-    sample_df = df.groupby('osm_type').apply(lambda x: x.sample(n=sample_size)).reset_index(drop=True)
+    if sample_size <= 0:
+        sample_df = df.copy(deep=True)
+    else:
+        sample_df = df.groupby('osm_type').apply(lambda x: x.sample(n=sample_size)).reset_index(drop=True)
+    sample_df['index'] = sample_df['unique_id']
+    sample_df.set_index('index', inplace=True)
     return sample_df
 
 
