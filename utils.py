@@ -161,6 +161,69 @@ def sample_features(df, sample_size):
     return sample_df
 
 
+def generate_svg_paths(feature_prep_df, overwrite=False):
+
+    if overwrite:
+        overwrite_query = 1
+    else:
+        overwrite_query = feature_prep_df.svg_path.isnull()
+
+    task_list = feature_prep_df.loc[(feature_prep_df.osm_type == "directions") & overwrite_query][['unique_id', 'clean_link']].values
+
+    results = []
+
+    if len(task_list) > 0:
+        driver = create_web_driver()
+
+        for unique, clean_link in task_list:
+            print(clean_link)
+            d = None
+            attempts = 0
+            max_attempts = 5
+            while not d and attempts < max_attempts:
+                attempts += 1
+                try:
+                    d = get_svg_path(clean_link, driver)
+                except Exception as e:
+                    print(f"\tAttempt {attempts}/{max_attempts}", repr(e))
+            results.append([unique, d])
+            # feature_prep_df.loc[ix, "svg_path"] = d
+
+        driver.quit()
+
+    return results
+
+
+def get_svg_path(url, driver, max_attempts=10):
+    """Get SVG path data from leaflet map at specified url
+
+    Only specifically tested using OpenStreetMap 'directions' results
+
+    Sleeps for a set amount of time if request fails to complete, until max attempts are reached
+
+    Args:
+        url (str): url of OSM directions page with leaflet map to extract path data from
+        driver (webdriver): Selenium webdriver instance to use for web requests
+        max_attempts (int, optional): number of times to attempt request before timing out
+
+    Returns:
+        str: SVG path element data
+    """
+    driver.get(url)
+    attempts = 0
+    d = None
+    while not d:
+        time.sleep(3)
+        soup = BS(driver.page_source, "html.parser")
+        try:
+            d = soup.find("path", {"class": "leaflet-interactive"})["d"]
+        except:
+            if attempts >= max_attempts:
+                raise Exception("max_attempts exceeded waiting for page to load")
+            else:
+                attempts += 1
+    return d
+
 
 def create_web_driver():
     # chromedriver_path = "./chromedriver"
@@ -322,37 +385,6 @@ def get_from_overpass(osm_id, osm_type, api):
     return result
 
 
-def get_svg_path(url, driver, max_attempts=10):
-    """Get SVG path data from leaflet map at specified url
-
-    Only specifically tested using OpenStreetMap 'directions' results
-
-    Sleeps for a set amount of time if request fails to complete, until max attempts are reached
-
-    Args:
-        url (str): url of OSM directions page with leaflet map to extract path data from
-        driver (webdriver): Selenium webdriver instance to use for web requests
-        max_attempts (int, optional): number of times to attempt request before timing out
-
-    Returns:
-        str: SVG path element data
-    """
-    driver.get(url)
-    attempts = 0
-    d = None
-    while not d:
-        time.sleep(3)
-        soup = BS(driver.page_source, "html.parser")
-        try:
-            d = soup.find("path", {"class": "leaflet-interactive"})["d"]
-        except:
-            if attempts >= max_attempts:
-                raise Exception("max_attempts exceeded waiting for page to load")
-            else:
-                attempts += 1
-    return d
-
-
 def calculate_unit_size(start, end, first, last):
     """Calculate the size of an arbitrary geospatial unit in terms of decimal degrees
 
@@ -495,6 +527,7 @@ def prepare_single_feature(row):
     props = generate_feature_properties(row)
     path = row.geojson_path
     return (path, geom, props)
+
 
 def output_multi_feature_geojson(geom_list, props_list, path):
     """Ouput a geojson file containing a multiple features

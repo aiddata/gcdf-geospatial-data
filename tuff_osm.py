@@ -140,31 +140,16 @@ if __name__ == "__main__":
 
     if "directions" in set(feature_prep_df.loc[feature_prep_df.svg_path.isnull(), "osm_type"]):
 
-        driver = utils.create_web_driver()
+    # get svg path for osm "directions" links
+    results = utils.generate_svg_paths(feature_prep_df, overwrite=False)
 
-        for ix, row in feature_prep_df.loc[feature_prep_df.osm_type == "directions"].iterrows():
-            print(row.clean_link)
-            d = None
-            attempts = 0
-            max_attempts = 5
-            while not d and attempts < max_attempts:
-                attempts += 1
-                try:
-                    d = utils.get_svg_path(row.clean_link, driver)
-                except Exception as e:
-                    print(f"\tAttempt {attempts}/{max_attempts}", repr(e))
-            feature_prep_df.loc[ix, "svg_path"] = d
+    # join svg paths back to dataframe
+    for unique_id, svg_path in results:
+        feature_prep_df.loc[unique_id, "svg_path"] = svg_path
 
-        driver.quit()
 
 
     feature_prep_df.to_csv(feature_prep_df_path, index=False)
-
-
-
-    # -------------------------------------
-    # -------------------------------------
-
 
     if prepare_only:
         sys.exit("Completed preparing feature_prep_df.csv, and exiting as `prepare_only` option was set.")
