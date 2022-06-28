@@ -52,12 +52,13 @@ location_field = config[run_name]["location_field"]
 # search string used to identify relevant OSM link within the location_field of input csv
 osm_str = config[run_name]["osm_str"]
 
-
 output_project_fields = json.loads(config[run_name]["output_project_fields"])
 
 prepare_only = config.getboolean(run_name, "prepare_only")
+
 from_existing = config.getboolean(run_name, "from_existing")
-from_existing_timestamp = config[run_name]["from_existing_timestamp"]
+if from_existing:
+    from_existing_timestamp = config[run_name]["from_existing_timestamp"]
 
 update_mode = config.getboolean(run_name, "update_mode")
 if update_mode:
