@@ -47,7 +47,7 @@ def init_overpass_api():
     return api
 
 
-def load_input_data(base_dir, release_name):
+def load_input_data(base_dir, release_name, output_project_fields, id_field, location_field):
     """Loads input datasets from various Excel sheets
 
     Makes column names uniform
@@ -69,6 +69,10 @@ def load_input_data(base_dir, release_name):
     huawei_df["finance_type"] = "huawei"
     # merge datasets
     input_data = pd.concat([development_df, military_df, huawei_df], axis=0)
+
+    input_data[[id_field, location_field] + output_project_fields].copy(deep=True)
+    input_data['id'] = input_data[id_field]
+    input_data['location'] = input_data[location_field]
     return input_data
 
 
@@ -101,10 +105,9 @@ def split_and_match_text(text, split, match):
     return link_list
 
 
-def get_osm_links(input_data_df, id_field, location_field, osm_str, invalid_str_list=None, update_ids=None):
+def get_osm_links(input_data_df, osm_str, invalid_str_list=None, update_ids=None):
 
-    loc_df = input_data_df[[id_field, location_field]].copy(deep=True)
-    loc_df.columns = ["id", "location"]
+    loc_df = input_data_df[["id", "location"]].copy(deep=True)
 
     if update_ids:
         loc_df = loc_df.loc[loc_df["id"].isin(update_ids)]
@@ -659,7 +662,7 @@ def generate_feature_properties(row):
         "feature_count": row.feature_count,
     }
     for k,v in row.items():
-        if k not in ["project_id", "feature_list", "feature_count", "multipolygon", "geojson_path", "geometry"]:
+        if k not in ['id', 'location', 'project_id', 'feature_list', 'feature_count', 'multipolygon', 'geojson_path', 'geometry']:
             if isinstance(v, type(pd.NaT)) or pd.isnull(v):
                 v = None
             elif type(v) not in [int, str, float]:

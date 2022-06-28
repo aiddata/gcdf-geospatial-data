@@ -73,7 +73,7 @@ timestamp = utils.get_current_timestamp('%Y_%m_%d_%H_%M')
 
 # directory where all outputs will be saved
 output_dir = base_dir / "output_data" / release_name / "results" / timestamp
-(output_dir, "geojsons").mkdir(parents=True, exist_ok=True)
+(output_dir / "geojsons").mkdir(parents=True, exist_ok=True)
 
 api = utils.init_overpass_api()
 
@@ -85,7 +85,7 @@ importlib.reload(utils)
 
 if __name__ == "__main__":
 
-    input_data_df = utils.load_input_data(base_dir, release_name)
+    input_data_df = utils.load_input_data(base_dir, release_name, output_project_fields, id_field, location_field)
 
     link_df_path = output_dir / "osm_links.csv"
     feature_prep_df_path = output_dir / "feature_prep.csv"
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         full_feature_prep_df = utils.init_existing(output_dir, from_existing_timestamp)
 
     else:
-        link_df = utils.get_osm_links(input_data_df, id_field, location_field, osm_str, invalid_str_list, update_ids)
+        link_df = utils.get_osm_links(input_data_df, osm_str, invalid_str_list, update_ids)
 
         # save dataframe with all osm links to csv
         # invalid osm links can be referenced later for fixes
@@ -140,9 +140,9 @@ if __name__ == "__main__":
     # -------------------------------------
 
 
-    def gen_flist(df):
+    def generate_task_list(df, api):
         # generate list of tasks to iterate over
-        flist = list(zip(
+        task_list = list(zip(
             df["unique_id"],
             df["clean_link"],
             df["osm_type"],
@@ -151,9 +151,9 @@ if __name__ == "__main__":
             # itertools.repeat(driver),
             itertools.repeat(api)
         ))
-        return flist
+        return task_list
 
-    flist = gen_flist(feature_prep_df)
+    task_list = generate_task_list(feature_prep_df, api)
 
 
     print("Running feature generation")
@@ -172,13 +172,13 @@ if __name__ == "__main__":
         iter_max_workers = math.ceil(max_workers / iteration)
 
         if errors_df is not None:
-            flist = gen_flist(errors_df)
+            task_list = generate_task_list(errors_df)
 
         # task_results = []
-        # for result in run_tasks(get_osm_feat, flist, parallel, max_workers=max_workers, chunksize=1, unordered=True):
+        # for result in utils.run_tasks(get_osm_feat, task_list, parallel, max_workers=max_workers, chunksize=1, unordered=True):
         #     task_results.append(result)
 
-        task_results = utils.run_tasks(utils.get_osm_feat, flist, parallel, max_workers=iter_max_workers, chunksize=1)
+        task_results = utils.run_tasks(utils.get_osm_feat, task_list, parallel, max_workers=iter_max_workers, chunksize=1)
 
         valid_df, errors_df = utils.process_results(task_results, valid_df, errors_df, feature_prep_df)
 
@@ -186,11 +186,12 @@ if __name__ == "__main__":
             break
 
 
-    errors_df.to_csv(os.path.join(output_dir, "processing_errors_df.csv"), index=False)
+    processing_valid_path = output_dir / "processing_valid.csv"
+    processing_errors_path = output_dir / "processing_errors.csv"
 
-    # output valid results to csv
-    valid_df[[i for i in valid_df.columns if i != "feature"]].to_csv(output_dir / "valid_df.csv", index=False)
-    valid_df.to_csv(output_dir / "valid_gdf.csv", index=False)
+    valid_df.drop('feature', axis=1).to_csv(processing_valid_path, index=False)
+    valid_df.to_csv(output_dir / "processing_valid_gdf.csv", index=False)
+    errors_df.to_csv(processing_errors_path, index=False)
 
 
     # -------------------------------------
@@ -209,12 +210,11 @@ if __name__ == "__main__":
     grouped_df["multipolygon"] = grouped_df.feature_list.apply(lambda mp_list: unary_union([p for mp in mp_list for p in mp.geoms]))
     grouped_df["multipolygon"] = grouped_df.multipolygon.apply(lambda x: MultiPolygon([x]) if x.type == "Polygon" else x)
     grouped_df["feature_count"] = grouped_df.feature_list.apply(lambda mp: len(mp))
-    grouped_df["geojson_path"] = grouped_df.project_id.apply(lambda x: os.path.join(output_dir, "geojsons", f"{x}.geojson"))
+    grouped_df["geojson_path"] = grouped_df.project_id.apply(lambda x: output_dir / "geojsons" / f"{x}.geojson")
 
 
     # join original project fields back to be included in geojson properties
-    project_data_df = input_data_df[output_project_fields].copy()
-    grouped_df = grouped_df.merge(project_data_df, left_on="project_id", right_on=id_field, how="left")
+    grouped_df = grouped_df.merge(input_data_df, left_on="project_id", right_on=id_field, how="left")
 
 
     # -----
@@ -255,8 +255,13 @@ if __name__ == "__main__":
 
     # -----
     # create final csv
-    drop_cols = ['project_id', 'feature_list', 'multipolygon', 'feature_count', 'geojson_path', 'geometry']
-    combined_gdf[[i for i in combined_gdf.columns if i not in drop_cols]].to_csv(os.path.join(output_dir, "final_df.csv"), index=False)
+    drop_cols = ['geometry']
+    combined_gdf.drop(drop_cols, axis=1).to_csv(os.path.join(output_dir, "final_df.csv"), index=False)
+
+
+
+    # -------------------------------------
+    # -------------------------------------
 
 
     # -----
