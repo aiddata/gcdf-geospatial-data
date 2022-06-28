@@ -92,17 +92,9 @@ if __name__ == "__main__":
     feature_prep_df_path = results_dir / "feature_prep.csv"
 
     if from_existing:
-        existing_dir = base_dir / "output_data" / release_name / "results" / from_existing_timestamp
-        existing_link_df_path = existing_dir / "osm_valid_links.csv"
-        existing_feature_prep_df_path = existing_dir / "feature_prep.csv"
-
-        full_feature_prep_df = pd.read_csv(existing_feature_prep_df_path)
-
-        # copy previously generated files to directory for current run
-        shutil.copyfile(existing_link_df_path, link_df_path)
+        full_feature_prep_df = utils.init_existing(results_dir, from_existing_timestamp)
 
     else:
-
         link_df = utils.get_osm_links(input_data_df, id_field, location_field, osm_str, invalid_str_list, update_ids)
 
         # save dataframe with all osm links to csv
@@ -147,6 +139,7 @@ if __name__ == "__main__":
 
     # -------------------------------------
     # -------------------------------------
+    
 
     def gen_flist(df):
         # generate list of tasks to iterate over

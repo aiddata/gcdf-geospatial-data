@@ -8,6 +8,7 @@ import random
 import warnings
 import functools
 import re
+import shutil
 
 from bs4 import BeautifulSoup as BS
 from shapely.geometry import Point, Polygon, LineString, MultiPolygon
@@ -17,6 +18,21 @@ import overpass
 from overpass.errors import TimeoutError, ServerLoadError, MultipleRequestsError
 import osm2geojson
 from selenium import webdriver
+
+
+def get_current_timestamp(format_str=None):
+    """Get the current timestamp
+
+    Args:
+        format_str (str, optional): string to format timestamp
+
+    Returns:
+        str: string formatted timestamp
+    """
+    if format_str is None:
+        format_str = '%Y_%m_%d_%H_%M'
+    timestamp = datetime.datetime.fromtimestamp(int(time.time())).strftime(format_str)
+    return timestamp
 
 
 def init_overpass_api():
@@ -56,19 +72,18 @@ def load_input_data(base_dir, release_name):
     return input_data
 
 
-def get_current_timestamp(format_str=None):
-    """Get the current timestamp
+def init_existing(results_dir, existing_timestamp):
+    existing_dir = results_dir.parent / existing_timestamp
+    existing_link_df_path = existing_dir / "osm_valid_links.csv"
+    existing_feature_prep_df_path = existing_dir / "feature_prep.csv"
 
-    Args:
-        format_str (str, optional): string to format timestamp
+    full_feature_prep_df = pd.read_csv(existing_feature_prep_df_path)
 
-    Returns:
-        str: string formatted timestamp
-    """
-    if format_str is None:
-        format_str = '%Y_%m_%d_%H_%M'
-    timestamp = datetime.datetime.fromtimestamp(int(time.time())).strftime(format_str)
-    return timestamp
+    link_df_path = results_dir / "osm_links.csv"
+
+    # copy previously generated files to directory for current run
+    shutil.copyfile(existing_link_df_path, link_df_path)
+    return full_feature_prep_df
 
 
 def split_and_match_text(text, split, match):
