@@ -140,7 +140,7 @@ unzip chromedriver_linux64.zip
 Notes:
 - If you are using Chrome you will need to edit the Python code to initiate the Selenium webdriver with Chrome instead of Firefox.
     - Some components to do this are commented out in the code, but they are not likely complete and not tested.
-
+- The geckodriver and Firefox/Chrome install may need permissions adjusted after initial install
 
 3. Adjust variables
 
