@@ -51,6 +51,7 @@ location_field = config[run_name]["location_field"]
 
 # search string used to identify relevant OSM link within the location_field of input csv
 osm_str = config[run_name]["osm_str"]
+invalid_str_list = json.loads(config[run_name]["invalid_str_list"])
 
 output_project_fields = json.loads(config[run_name]["output_project_fields"])
 
@@ -61,12 +62,14 @@ if from_existing:
     from_existing_timestamp = config[run_name]["from_existing_timestamp"]
 
 update_mode = config.getboolean(run_name, "update_mode")
+update_ids = None
 if update_mode:
     update_ids = json.loads(config[run_name]["update_ids"])
     update_timestamp = config[run_name]["update_timestamp"]
 
 
 timestamp = utils.get_current_timestamp('%Y_%m_%d_%H_%M')
+
 
 # directory where all outputs will be saved
 output_dir = base_dir / "output_data" / release_name
@@ -83,52 +86,38 @@ importlib.reload(utils)
 
 if __name__ == "__main__":
 
-    input_data = utils.load_input_data(base_dir, release_name)
+    input_data_df = utils.load_input_data(base_dir, release_name)
 
     link_df_path = results_dir / "osm_links.csv"
-    invalid_link_df_path = results_dir / "osm_invalid_links.csv"
     feature_prep_df_path = results_dir / "feature_prep.csv"
 
     if from_existing:
         existing_dir = base_dir / "output_data" / release_name / "results" / from_existing_timestamp
         existing_link_df_path = existing_dir / "osm_valid_links.csv"
-        existing_invalid_link_df_path = existing_dir / "osm_invalid_links.csv"
         existing_feature_prep_df_path = existing_dir / "feature_prep.csv"
 
         full_feature_prep_df = pd.read_csv(existing_feature_prep_df_path)
 
         # copy previously generated files to directory for current run
         shutil.copyfile(existing_link_df_path, link_df_path)
-        shutil.copyfile(existing_invalid_link_df_path, invalid_link_df_path)
 
     else:
 
-        loc_df = input_data[[id_field, location_field]].copy(deep=True)
-        loc_df.columns = ["id", "location"]
+        link_df = utils.get_osm_links(input_data_df, id_field, location_field, osm_str, invalid_str_list, update_ids)
 
-        if update_mode:
-            loc_df = loc_df.loc[loc_df["id"].isin(update_ids)]
-
-        # keep rows where location field contains at least one osm link
-        link_df = loc_df.loc[loc_df.location.notnull() & loc_df.location.str.contains(osm_str)].copy(deep=True)
-        # get osm links from location field
-        link_df["osm_list"] = link_df.location.apply(lambda x: utils.split_and_match_text(x, " ", osm_str))
-        # save dataframe with osm links to csv
+        # save dataframe with all osm links to csv
+        # invalid osm links can be referenced later for fixes
         link_df.to_csv(link_df_path, index=False, encoding="utf-8")
 
-        # save all rows invalid osm links to separate csv that can be referenced for fixes
-        invalid_str_list = ["search", "query"]
-        invalid_link_df = link_df.loc[link_df.osm_list.apply(lambda x: any(i in str(x) for i in invalid_str_list))].copy(deep=True)
-        invalid_link_df.to_csv(invalid_link_df_path, index=False, encoding="utf-8")
-
         # drop all rows with invalid osm links
-        valid_link_df = link_df.loc[~link_df.index.isin(invalid_link_df.index)].copy(deep=True)
+        valid_link_df = link_df.loc[link_df.valid].copy(deep=True)
 
         print(f"""
-        {len(loc_df)} projects provides
-        {len(link_df)} contain OSM links
-        {len(invalid_link_df)} contain at least 1 non-parseable link
-        {len(valid_link_df)} projects with valid links
+        {len(input_data_df)} projects provides
+        {len(set(link_df.id))} contain OSM links
+        {len(link_df.loc[~link_df.valid])} non-parseable links over {len(set(link_df.loc[~link_df.valid, 'id']))} projects
+        {len(valid_link_df)} valid links over {len(set(valid_link_df.id))} projects
+        {len(set.intersection(set(link_df.loc[~link_df.valid, 'id']), set(valid_link_df.id)))} projects contain both valid and invalid links
         """)
 
         full_feature_prep_df = utils.classify_osm_links(valid_link_df)
@@ -254,7 +243,7 @@ if __name__ == "__main__":
 
 
     # join original project fields back to be included in geojson properties
-    project_data_df = input_data[output_project_fields].copy()
+    project_data_df = input_data_df[output_project_fields].copy()
     grouped_df = grouped_df.merge(project_data_df, left_on="project_id", right_on=id_field, how="left")
 
 

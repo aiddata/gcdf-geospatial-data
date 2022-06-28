@@ -86,6 +86,28 @@ def split_and_match_text(text, split, match):
     return link_list
 
 
+def get_osm_links(input_data_df, id_field, location_field, osm_str, invalid_str_list=None, update_ids=None):
+
+    loc_df = input_data_df[[id_field, location_field]].copy(deep=True)
+    loc_df.columns = ["id", "location"]
+
+    if update_ids:
+        loc_df = loc_df.loc[loc_df["id"].isin(update_ids)]
+
+    # keep rows where location field contains at least one osm link
+    link_list_df = loc_df.loc[loc_df.location.notnull() & loc_df.location.str.contains(osm_str)].copy(deep=True)
+    # get osm links from location field
+    link_list_df["osm_list"] = link_list_df.location.apply(lambda x: split_and_match_text(x, " ", osm_str))
+
+    link_df = link_list_df.explode('osm_list').copy(deep=True)
+    link_df.rename(columns={"osm_list": "osm_link"}, inplace=True)
+
+    link_df['valid'] = True
+    if invalid_str_list:
+        link_df.loc[link_df.osm_link.str.contains('|'.join(invalid_str_list)), 'valid'] = False
+    return link_df
+
+
 """
 # directions link validation
 
@@ -112,33 +134,35 @@ query_list = [j for i in osm_df["osm_list"].to_list() for j in i if "query" in s
 """
 def classify_osm_links(filtered_df, quiet=True):
     tmp_feature_df_list = []
+
     for ix, (_, row) in enumerate(filtered_df.iterrows()):
         project_id = row["id"]
+        link = row["osm_link"]
+
+        osm_id = None
+        svg_path = None
+
+        # extract if link is for a way, node, relation, directions
+        osm_type = link.split("/")[3].split("?")[0]
+
+        if osm_type == "directions":
+            clean_link = link.split("#map=")[0]
+            clean_link = clean_link[clean_link.index("http"):]
+            while not clean_link[-1].isdigit():
+                clean_link = clean_link[:-1]
+
+        elif osm_type in ["node", "way", "relation"]:
+            # extract the osm id for the way/node/relation from the url
+            #   (gets rid of an extra stuff after the id as well)
+            # osm_id = link.split("/")[4].split("#")[0].split(".")[0]
+            osm_id = re.match("([0-9]*)", link.split("/")[4]).groups()[0]
+            # rebuild a clean link
+            clean_link = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
+
         if not quiet:
-            print(project_id)
-        osm_links = row["osm_list"]
-        # iterate over each osm link for a way
-        for link in osm_links:
-            osm_id = None
-            svg_path = None
-            # extract if link is for a way, node, relation, directions
-            osm_type = link.split("/")[3].split("?")[0]
-            if osm_type == "directions":
-                osm_id = None
-                clean_link = link.split("#map=")[0]
-                clean_link = clean_link[clean_link.index("http"):]
-                while not clean_link[-1].isdigit():
-                    clean_link = clean_link[:-1]
-            elif osm_type in ["node", "way", "relation"]:
-                # extract the osm id for the way/node/relation from the url
-                #   (gets rid of an extra stuff after the id as well)
-                # osm_id = link.split("/")[4].split("#")[0].split(".")[0]
-                osm_id = re.match("([0-9]*)", link.split("/")[4]).groups()[0]
-                # rebuild a clean link
-                clean_link = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
-            if not quiet:
-                print(f"\t{osm_type} {osm_id}")
-            tmp_feature_df_list.append([project_id, clean_link, osm_type, osm_id, svg_path])
+            print(f"\t{project_id}: {osm_type} {osm_id}")
+
+        tmp_feature_df_list.append([project_id, clean_link, osm_type, osm_id, svg_path])
 
 
     feature_df = pd.DataFrame(tmp_feature_df_list, columns=["project_id", "clean_link", "osm_type", "osm_id", "svg_path"])
