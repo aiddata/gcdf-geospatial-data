@@ -84,13 +84,21 @@ if __name__ == "__main__":
 
     input_data = utils.load_input_data(base_dir, release_name)
 
+    link_df_path = results_dir / "osm_links.csv"
+    invalid_link_df_path = results_dir / "osm_invalid_links.csv"
+    feature_prep_df_path = results_dir / "feature_prep.csv"
+
     if from_existing:
-        from_existing_path = base_dir / "output_data" / release_name / "results" / from_existing_timestamp / "feature_prep.csv"
-        full_feature_prep_df = pd.read_csv(from_existing_path)
+        existing_dir = base_dir / "output_data" / release_name / "results" / from_existing_timestamp
+        existing_link_df_path = existing_dir / "osm_valid_links.csv"
+        existing_invalid_link_df_path = existing_dir / "osm_invalid_links.csv"
+        existing_feature_prep_df_path = existing_dir / "feature_prep.csv"
+
+        full_feature_prep_df = pd.read_csv(existing_feature_prep_df_path)
 
         # copy previously generated files to directory for current run
-        shutil.copyfile(base_dir / "output_data" / release_name / "results" / from_existing_timestamp / "osm_links.csv", results_dir / "osm_links.csv")
-        shutil.copyfile(base_dir / "output_data" / release_name / "results" / from_existing_timestamp / "osm_invalid_links.csv", results_dir / "osm_invalid_links.csv")
+        shutil.copyfile(existing_link_df_path, link_df_path)
+        shutil.copyfile(existing_invalid_link_df_path, invalid_link_df_path)
 
     else:
 
