@@ -110,42 +110,43 @@ directions_list = [j for i in osm_df["osm_list"].to_list() for j in i if "direct
 search_list = [j for i in osm_df["osm_list"].to_list() for j in i if "search" in str(j)]
 query_list = [j for i in osm_df["osm_list"].to_list() for j in i if "query" in str(j)]
 """
-def classify_osm_links(filtered_df):
+def classify_osm_links(filtered_df, quiet=True):
     tmp_feature_df_list = []
     for ix, (_, row) in enumerate(filtered_df.iterrows()):
-        # if ix < 170: continue
         project_id = row["id"]
-        print(project_id)
+        if not quiet:
+            print(project_id)
         osm_links = row["osm_list"]
         # iterate over each osm link for a way
         for link in osm_links:
             osm_id = None
             svg_path = None
-            try:
-                # extract if link is for a way, node, relation, directions
-                osm_type = link.split("/")[3].split("?")[0]
-                if osm_type == "directions":
-                    osm_id = None
-                    clean_link = link.split("#map=")[0]
-                    clean_link = clean_link[clean_link.index("http"):]
-                    while not clean_link[-1].isdigit():
-                        clean_link = clean_link[:-1]
-                elif osm_type in ["node", "way", "relation"]:
-                    # extract the osm id for the way/node/relation from the url
-                    #   (gets rid of an extra stuff after the id as well)
-                    # osm_id = link.split("/")[4].split("#")[0].split(".")[0]
-                    osm_id = re.match("([0-9]*)", link.split("/")[4]).groups()[0]
-                    # rebuild a clean link
-                    clean_link = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
+            # extract if link is for a way, node, relation, directions
+            osm_type = link.split("/")[3].split("?")[0]
+            if osm_type == "directions":
+                osm_id = None
+                clean_link = link.split("#map=")[0]
+                clean_link = clean_link[clean_link.index("http"):]
+                while not clean_link[-1].isdigit():
+                    clean_link = clean_link[:-1]
+            elif osm_type in ["node", "way", "relation"]:
+                # extract the osm id for the way/node/relation from the url
+                #   (gets rid of an extra stuff after the id as well)
+                # osm_id = link.split("/")[4].split("#")[0].split(".")[0]
+                osm_id = re.match("([0-9]*)", link.split("/")[4]).groups()[0]
+                # rebuild a clean link
+                clean_link = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
+            if not quiet:
                 print(f"\t{osm_type} {osm_id}")
-                tmp_feature_df_list.append([project_id, clean_link, osm_type, osm_id, svg_path])
-            except Exception as e:
-                print(f"\tError: {link}")
-                print("\t", e)
+            tmp_feature_df_list.append([project_id, clean_link, osm_type, osm_id, svg_path])
 
 
     feature_df = pd.DataFrame(tmp_feature_df_list, columns=["project_id", "clean_link", "osm_type", "osm_id", "svg_path"])
     feature_df["unique_id"] = range(len(feature_df))
+    feature_df["index"] = range(len(feature_df))
+
+    feature_df.set_index('index', inplace=True)
+
     return feature_df
 
 
