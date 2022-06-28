@@ -138,7 +138,7 @@ if __name__ == "__main__":
     # option to sample data for testing; sample size <=0 returns full dataset
     feature_prep_df = utils.sample_features(full_feature_prep_df, sample_size=2)
 
-    if "directions" in set(feature_prep_df.loc[feature_prep_df.svg_path.isnull(), "osm_type"]):
+    print(feature_prep_df.osm_type.value_counts())
 
     # get svg path for osm "directions" links
     results = utils.generate_svg_paths(feature_prep_df, overwrite=False)
@@ -155,7 +155,6 @@ if __name__ == "__main__":
         sys.exit("Completed preparing feature_prep_df.csv, and exiting as `prepare_only` option was set.")
 
 
-    features_df = feature_prep_df.copy(deep=True)
 
     # -------------------------------------
     # -------------------------------------
@@ -173,8 +172,7 @@ if __name__ == "__main__":
         ))
         return flist
 
-    flist = gen_flist(features_df)
-
+    flist = gen_flist(feature_prep_df)
 
 
     print("Running feature generation")
@@ -189,7 +187,7 @@ if __name__ == "__main__":
         if errors_df is not None:
             flist = gen_flist(errors_df)
 
-        # get_osm_feat for each row in features_df
+        # get_osm_feat for each row in feature_prep_df
         #     - parallelize
         #     - buffer lines/points
         #     - convert all features to multipolygons
@@ -213,7 +211,7 @@ if __name__ == "__main__":
         # results_df.drop(["feature"], axis=1, inplace=True)
         results_df[results_join_field_name] = results_df[results_join_field_name].apply(lambda x: x[results_join_field_loc])
 
-        output_df = features_df.merge(results_df, on=results_join_field_name, how="left")
+        output_df = feature_prep_df.merge(results_df, on=results_join_field_name, how="left")
 
 
         if valid_df is None:
@@ -221,8 +219,6 @@ if __name__ == "__main__":
         else:
             valid_df = pd.concat([valid_df, output_df.loc[output_df.status == 0]])
 
-
-        skipped_df = output_df[~output_df["status"].isin([0, 1])].copy()
 
         errors_df = output_df[output_df["status"] > 0].copy()
         print("\t{} errors found out of {} tasks".format(len(errors_df), len(output_df)))
