@@ -180,7 +180,6 @@ def classify_osm_links(filtered_df, quiet=True):
             continue
 
         osm_id = None
-        svg_path = None
 
         # extract if link is for a way, node, relation, directions
         osm_type = link.split("/")[3].split("?")[0]
@@ -205,10 +204,10 @@ def classify_osm_links(filtered_df, quiet=True):
         if not quiet:
             print(f"\t{project_id}: {osm_type} {osm_id}")
 
-        tmp_feature_df_list.append([project_id, clean_link, osm_type, osm_id, svg_path])
+        tmp_feature_df_list.append([project_id, clean_link, osm_type, osm_id])
 
 
-    feature_df = pd.DataFrame(tmp_feature_df_list, columns=["id", "clean_link", "osm_type", "osm_id", "svg_path"])
+    feature_df = pd.DataFrame(tmp_feature_df_list, columns=["id", "clean_link", "osm_type", "osm_id"])
     feature_df["unique_id"] = range(len(feature_df))
     feature_df["index"] = feature_df["unique_id"]
     feature_df.set_index('index', inplace=True)
@@ -249,19 +248,19 @@ def sample_features(df, sample_size):
 
 def generate_svg_paths(feature_prep_df, overwrite=False):
 
-    if overwrite:
+    if overwrite or 'svg_path' not in feature_prep_df.columns:
         overwrite_query = 1
     else:
         overwrite_query = feature_prep_df.svg_path.isnull()
 
     task_list = feature_prep_df.loc[(feature_prep_df.osm_type == "directions") & overwrite_query][['unique_id', 'clean_link']].values
 
-    results = []
+    # results = []
 
     if len(task_list) > 0:
         driver = create_web_driver()
 
-        for unique, clean_link in task_list:
+        for unique_id, clean_link in task_list:
             print(clean_link)
             d = None
             attempts = 0
@@ -272,12 +271,16 @@ def generate_svg_paths(feature_prep_df, overwrite=False):
                     d = get_svg_path(clean_link, driver)
                 except Exception as e:
                     print(f"\tAttempt {attempts}/{max_attempts}", repr(e))
-            results.append([unique, d])
-            # feature_prep_df.loc[ix, "svg_path"] = d
+            # results.append([unique_id, d])
+            feature_prep_df.loc[unique_id, "svg_path"] = d
 
         driver.quit()
 
-    return results
+    # result_df = pd.DataFrame(results, columns=["unique_id", "svg_path"])
+
+    # return_df = feature_prep_df.merge(result_df, how="left", on="unique_id")
+
+    return feature_prep_df
 
 
 def get_svg_path(url, driver, max_attempts=10):

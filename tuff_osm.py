@@ -112,10 +112,9 @@ else:
 
 
 # option to sample data for testing; sample size <=0 returns full dataset
-feature_prep_df = utils.sample_features(full_feature_prep_df, sample_size=2)
+sampled_feature_prep_df = utils.sample_features(full_feature_prep_df, sample_size=2)
 
-# get svg path for osm "directions" links
-svg_results = utils.generate_svg_paths(feature_prep_df, overwrite=False)
+feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=False)
 
 # join svg paths back to dataframe
 for unique_id, svg_path in svg_results:
