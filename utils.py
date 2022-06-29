@@ -664,6 +664,21 @@ def process_results(tasl_results, valid_df, errors_df, merge_df):
     return valid_df, errors_df
 
 
+def prepare_multipolygons(valid_df):
+
+    # combine features for each project
+    #    - iterate over all polygons (p) within feature multipolygons (mp) to create single multipolygon per project
+
+    grouped_df = valid_df.groupby("id")["feature"].apply(list).reset_index(name="feature_list")
+    # for group in grouped_df:
+    #     group_mp = MultiPolygon([p for mp in group.feature for p in mp]).__geo_interface_
+    # move this to apply instead of loop so we can have a final df to output results/errors to
+    grouped_df["multipolygon"] = grouped_df.feature_list.apply(lambda mp_list: unary_union([p for mp in mp_list for p in mp.geoms]))
+    grouped_df["multipolygon"] = grouped_df.multipolygon.apply(lambda x: MultiPolygon([x]) if x.type == "Polygon" else x)
+    grouped_df["feature_count"] = grouped_df.feature_list.apply(lambda mp: len(mp))
+    return grouped_df
+
+
 def write_json_to_file(json_dict, path, **kwargs):
     """Write a valid JSON formatted dictionary to a file
 
@@ -749,7 +764,7 @@ def export_combined_data(combined_gdf, output_dir):
     final_df = combined_gdf.drop(final_drop_cols, axis=1)
     final_path = output_dir / "final_df.csv"
     final_df.to_csv(final_path, index=False)
-    
+
 
 def output_multi_feature_geojson(geom_list, props_list, path):
     """Ouput a geojson file containing a multiple features
