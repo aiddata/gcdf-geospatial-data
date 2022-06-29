@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup as BS
 from shapely.geometry import Point, Polygon, LineString, MultiPolygon
 from shapely.ops import unary_union
 import pandas as pd
+import geopandas as gpd
 import overpass
 from overpass.errors import TimeoutError, ServerLoadError, MultipleRequestsError
 import osm2geojson
@@ -73,10 +74,15 @@ def load_input_data(base_dir, release_name, output_project_fields, id_field, loc
     input_data[[id_field, location_field] + output_project_fields].copy(deep=True)
     input_data['id'] = input_data[id_field]
     input_data['location'] = input_data[location_field]
+
     return input_data
 
 
-def init_existing(output_dir, existing_timestamp):
+def subset_by_id(df, ids):
+    return df.loc[df["id"].isin(ids)].copy()
+
+
+def init_existing(output_dir, existing_timestamp, update_mode=False, update_ids=None):
     existing_dir = output_dir.parent / existing_timestamp
     existing_link_df_path = existing_dir / "osm_valid_links.csv"
     existing_feature_prep_df_path = existing_dir / "feature_prep.csv"
@@ -87,6 +93,14 @@ def init_existing(output_dir, existing_timestamp):
 
     # copy previously generated files to directory for current run
     shutil.copyfile(existing_link_df_path, link_df_path)
+
+    if update_mode:
+        # copy geojsons from update_timestamp geojsons dir to current timestamp geojsons dir
+        update_target_geojsons = existing_dir / "geojsons"
+        for gj in update_target_geojsons.iterdir():
+            if int(gj.name.split(".")[0]) not in update_ids:
+                shutil.copy(gj, output_dir / "geojsons")
+
     return full_feature_prep_df
 
 
@@ -101,28 +115,33 @@ def split_and_match_text(text, split, match):
     Returns:
         list: list of matching elements
     """
-    link_list = [i for i in text.split(split) if match in i]
+    link_list = [i for i in str(text).split(split) if match in i]
     return link_list
 
 
-def get_osm_links(input_data_df, osm_str, invalid_str_list=None, update_ids=None):
+def get_osm_links(input_data_df, osm_str, invalid_str_list=None, output_dir=None):
 
-    loc_df = input_data_df[["id", "location"]].copy(deep=True)
-
-    if update_ids:
-        loc_df = loc_df.loc[loc_df["id"].isin(update_ids)]
+    link_list_df = input_data_df[["id", "location"]].copy(deep=True)
 
     # keep rows where location field contains at least one osm link
-    link_list_df = loc_df.loc[loc_df.location.notnull() & loc_df.location.str.contains(osm_str)].copy(deep=True)
+    link_list_df['has_osm_str'] = link_list_df.location.notnull() & link_list_df.location.str.contains(osm_str)
     # get osm links from location field
-    link_list_df["osm_list"] = link_list_df.location.apply(lambda x: split_and_match_text(x, " ", osm_str))
+    link_list_df["osm_list"] = link_list_df['location'].apply(lambda x: split_and_match_text(x, " ", osm_str))
 
     link_df = link_list_df.explode('osm_list').copy(deep=True)
     link_df.rename(columns={"osm_list": "osm_link"}, inplace=True)
+    link_df.osm_link.fillna("", inplace=True)
 
-    link_df['valid'] = True
+    link_df['valid'] = False
     if invalid_str_list:
-        link_df.loc[link_df.osm_link.str.contains('|'.join(invalid_str_list)), 'valid'] = False
+        link_df.loc[link_df.has_osm_str & ~link_df.osm_link.str.contains('|'.join(invalid_str_list)), 'valid'] = True
+
+    if output_dir:
+        link_df_path = output_dir / "osm_links.csv"
+        # save dataframe with all osm links to csv
+        # invalid osm links can be referenced later for fixes
+        link_df.to_csv(link_df_path, index=False, encoding="utf-8")
+
     return link_df
 
 
@@ -157,6 +176,9 @@ def classify_osm_links(filtered_df, quiet=True):
         project_id = row["id"]
         link = row["osm_link"]
 
+        if link == '':
+            continue
+
         osm_id = None
         svg_path = None
 
@@ -177,19 +199,40 @@ def classify_osm_links(filtered_df, quiet=True):
             # rebuild a clean link
             clean_link = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
 
+        else:
+            continue
+
         if not quiet:
             print(f"\t{project_id}: {osm_type} {osm_id}")
 
         tmp_feature_df_list.append([project_id, clean_link, osm_type, osm_id, svg_path])
 
 
-    feature_df = pd.DataFrame(tmp_feature_df_list, columns=["project_id", "clean_link", "osm_type", "osm_id", "svg_path"])
+    feature_df = pd.DataFrame(tmp_feature_df_list, columns=["id", "clean_link", "osm_type", "osm_id", "svg_path"])
     feature_df["unique_id"] = range(len(feature_df))
-    feature_df["index"] = range(len(feature_df))
-
+    feature_df["index"] = feature_df["unique_id"]
     feature_df.set_index('index', inplace=True)
 
     return feature_df
+
+
+def osm_type_summary(full_df, valid_df, summary=False):
+
+    if summary:
+
+        summary_str = f"""
+        {len(set(full_df.id))} projects provided
+        {len(set(full_df.loc[full_df.has_osm_str].id))} projects contain OSM links
+        {len(full_df.loc[full_df.has_osm_str & ~full_df.valid])} non-parseable osm links over {len(set(full_df.loc[full_df.has_osm_str & ~full_df.valid].id))} projects
+        {len(valid_df)} valid links over {len(set(valid_df.id))} projects
+        {len(set.intersection(set(full_df.loc[full_df.has_osm_str & ~full_df.valid, 'id']), set(valid_df.id)))} projects contain both valid and invalid links
+
+        Distribution of valid OSM link types:
+        """
+        for i,j in valid_df.osm_type.value_counts().to_dict().items():
+            summary_str += f'\n\t\t{i}: {j}'
+
+        print(summary_str)
 
 
 def sample_features(df, sample_size):
@@ -658,7 +701,7 @@ def output_single_feature_geojson(geom, props, path):
 
 def generate_feature_properties(row):
     props = {
-        "id": row.project_id,
+        "id": row.id,
         "feature_count": row.feature_count,
     }
     for k,v in row.items():
@@ -673,13 +716,24 @@ def generate_feature_properties(row):
 
 def prepare_single_feature(row):
     """Export each MultiPolygon to individual GeoJSON
-        - tuff id as filename
-        - properties: project_id, count of locations, anything else?
+        - id as filename
+        - properties: id, feature_count, original fields defined in config
     """
     geom = row.multipolygon.__geo_interface__
     props = generate_feature_properties(row)
     path = row.geojson_path
     return (path, geom, props)
+
+
+def load_all_geojsons(output_dir):
+    combined_gdf = pd.concat([gpd.read_file(gj) for gj in (output_dir / "geojsons").iterdir()])
+
+    # date fields can get loaded a datetime objects which can geopandas doesn't always like to output, so convert to string to be safe
+    for c in combined_gdf.columns:
+        if c.endswith("Date (MM/DD/YYYY)"):
+            combined_gdf[c] = combined_gdf[c].apply(lambda x: str(x))
+
+    return combined_gdf
 
 
 def output_multi_feature_geojson(geom_list, props_list, path):
