@@ -111,11 +111,8 @@ else:
 
 
 
-
-
 # option to sample data for testing; sample size <=0 returns full dataset
 feature_prep_df = utils.sample_features(full_feature_prep_df, sample_size=2)
-
 
 # get svg path for osm "directions" links
 svg_results = utils.generate_svg_paths(feature_prep_df, overwrite=False)
@@ -125,12 +122,10 @@ for unique_id, svg_path in svg_results:
     feature_prep_df.loc[unique_id, "svg_path"] = svg_path
 
 
-
 feature_prep_df.to_csv(feature_prep_df_path, index=False)
 
 if prepare_only:
     sys.exit("Completed preparing feature_prep_df.csv, and exiting as `prepare_only` option was set.")
-
 
 
 # -------------------------------------
@@ -182,7 +177,6 @@ while errors_df is None or len(errors_df) > 0:
         break
 
 
-
 valid_df.to_csv(processing_valid_path, index=False)
 errors_df.to_csv(processing_errors_path, index=False)
 
@@ -205,7 +199,6 @@ grouped_df["multipolygon"] = grouped_df.multipolygon.apply(lambda x: MultiPolygo
 grouped_df["feature_count"] = grouped_df.feature_list.apply(lambda mp: len(mp))
 grouped_df["geojson_path"] = grouped_df.id.apply(lambda x: output_dir / "geojsons" / f"{x}.geojson")
 
-
 # join original project fields back to be included in geojson properties
 grouped_df = grouped_df.merge(input_data_df, on='id', how="left")
 
@@ -225,27 +218,8 @@ combined_gdf = utils.load_all_geojsons(output_dir)
 combined_gdf["viz_geojson_url"] = combined_gdf.id.apply(lambda x: f"https://github.com/{github_name}/{github_repo}/blob/{github_branch}/latest/geojsons/{x}.geojson")
 combined_gdf["dl_geojson_url"] = combined_gdf.id.apply(lambda x: f"https://raw.githubusercontent.com/{github_name}/{github_repo}/{github_branch}/latest/geojsons/{x}.geojson")
 
+utils.export_combined_data(combined_gdf, output_dir)
 
-# -----
-# export all combined GeoJSON and a subset for each finance type
-combined_gdf.to_file(output_dir / "all_combined_global.geojson", driver="GeoJSON")
-for i in set(combined_gdf.finance_type):
-    print(i)
-    subgrouped_df = combined_gdf[combined_gdf.finance_type == i].copy()
-    subgrouped_df.to_file(output_dir / f"{i}_combined_global.geojson", driver="GeoJSON")
-
-
-# -----
-# create final csv
-final_drop_cols = ['geometry']
-final_df = combined_gdf.drop(final_drop_cols, axis=1)
-final_path = output_dir / "final_df.csv"
-final_df.to_csv(final_path, index=False)
-
-
-
-# -------------------------------------
-# -------------------------------------
 
 
 # -----

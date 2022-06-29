@@ -736,6 +736,21 @@ def load_all_geojsons(output_dir):
     return combined_gdf
 
 
+def export_combined_data(combined_gdf, output_dir):
+    # export all combined GeoJSON and a subset for each finance type
+    combined_gdf.to_file(output_dir / "all_combined_global.geojson", driver="GeoJSON")
+    for i in set(combined_gdf.finance_type):
+        print(i)
+        subgrouped_df = combined_gdf[combined_gdf.finance_type == i].copy()
+        subgrouped_df.to_file(output_dir / f"{i}_combined_global.geojson", driver="GeoJSON")
+
+    # create final csv
+    final_drop_cols = ['geometry']
+    final_df = combined_gdf.drop(final_drop_cols, axis=1)
+    final_path = output_dir / "final_df.csv"
+    final_df.to_csv(final_path, index=False)
+    
+
 def output_multi_feature_geojson(geom_list, props_list, path):
     """Ouput a geojson file containing a multiple features
 
