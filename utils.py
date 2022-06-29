@@ -21,6 +21,16 @@ import osm2geojson
 from selenium import webdriver
 
 
+def save_df(df, path):
+    """Save a dataframe to a csv file
+    """
+    df.to_csv(path, index=False)
+
+
+def init_output_dir(output_dir):
+    (output_dir / "geojsons").mkdir(parents=True, exist_ok=True)
+
+
 def get_current_timestamp(format_str=None):
     """Get the current timestamp
 
@@ -424,7 +434,7 @@ def get_way_geom(clean_link):
         soup = get_soup(clean_link)
         details = soup.find_all('div', {'class': 'details'})
         if "Deleted" not in details[0].text:
-            print(f"\tNo previous way version found ({osm_id})")
+            print(f"\tNo previous way version found ({clean_link})")
             raise
         history_link = clean_link + "/history"
         soup = get_soup(history_link)

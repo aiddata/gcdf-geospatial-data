@@ -15,10 +15,10 @@ import configparser
 import itertools
 from pathlib import Path
 
-from shapely.geometry import MultiPolygon
-from shapely.ops import unary_union
-
 import utils
+
+import importlib
+importlib.reload(utils)
 
 
 # ensure correct working directory when running as a batch parallel job
@@ -68,12 +68,7 @@ if update_mode:
     update_timestamp = config[run_name]["update_timestamp"]
 
 
-
-
-# =====
-import importlib
-importlib.reload(utils)
-# =====
+# ==========================================================
 
 
 timestamp = utils.get_current_timestamp('%Y_%m_%d_%H_%M')
@@ -82,8 +77,8 @@ base_dir = Path(base_dir)
 
 # directory where all outputs will be saved
 output_dir = base_dir / "output_data" / release_name / "results" / timestamp
-(output_dir / "geojsons").mkdir(parents=True, exist_ok=True)
 
+utils.init_output_dir(output_dir)
 
 feature_prep_df_path = output_dir / "feature_prep.csv"
 processing_valid_path = output_dir / "processing_valid.csv"
@@ -92,9 +87,7 @@ processing_errors_path = output_dir / "processing_errors.csv"
 
 api = utils.init_overpass_api()
 
-
 input_data_df = utils.load_input_data(base_dir, release_name, output_project_fields, id_field, location_field)
-
 
 if from_existing:
     full_feature_prep_df = utils.init_existing(output_dir, from_existing_timestamp, update_mode, update_ids)
@@ -102,7 +95,6 @@ if from_existing:
         full_feature_prep_df = utils.subset_by_id(full_feature_prep_df, update_ids)
 
 else:
-
     link_df = utils.get_osm_links(input_data_df, osm_str, invalid_str_list, output_dir=output_dir)
 
     full_feature_prep_df = utils.classify_osm_links(link_df)
@@ -110,25 +102,18 @@ else:
     utils.osm_type_summary(link_df, full_feature_prep_df, summary=True)
 
 
-
 # option to sample data for testing; sample size <=0 returns full dataset
 sampled_feature_prep_df = utils.sample_features(full_feature_prep_df, sample_size=2)
 
 feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=False)
 
-# join svg paths back to dataframe
-for unique_id, svg_path in svg_results:
-    feature_prep_df.loc[unique_id, "svg_path"] = svg_path
-
-
-feature_prep_df.to_csv(feature_prep_df_path, index=False)
+utils.save_df(feature_prep_df, feature_prep_df_path)
 
 if prepare_only:
     sys.exit("Completed preparing feature_prep_df.csv, and exiting as `prepare_only` option was set.")
 
 
-# -------------------------------------
-# -------------------------------------
+# ==========================================================
 
 
 def generate_task_list(df, api):
@@ -176,12 +161,12 @@ while errors_df is None or len(errors_df) > 0:
         break
 
 
-valid_df.to_csv(processing_valid_path, index=False)
-errors_df.to_csv(processing_errors_path, index=False)
+utils.save_df(valid_df, processing_valid_path)
+utils.save_df(errors_df, processing_errors_path)
 
+importlib.reload(utils)
 
-# -------------------------------------
-# -------------------------------------
+# ==========================================================
 
 
 print("Building GeoJSONs")
@@ -194,14 +179,12 @@ grouped_df["geojson_path"] = grouped_df.id.apply(lambda x: output_dir / "geojson
 grouped_df = grouped_df.merge(input_data_df, on='id', how="left")
 
 
-# -----
 # create individual geojsons
 for ix, row in grouped_df.iterrows():
     path, geom, props = utils.prepare_single_feature(row)
     utils.output_single_feature_geojson(geom, props, path)
 
 
-# -----
 # create combined GeoJSON for all data
 combined_gdf = utils.load_all_geojsons(output_dir)
 
@@ -212,8 +195,6 @@ combined_gdf["dl_geojson_url"] = combined_gdf.id.apply(lambda x: f"https://raw.g
 utils.export_combined_data(combined_gdf, output_dir)
 
 
-
-# -----
 # final summary output
 print(f"""
 Dataset complete: {timestamp}
