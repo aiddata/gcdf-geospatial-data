@@ -124,11 +124,11 @@ def generate_task_list(df, api):
         df["osm_type"],
         df["osm_id"],
         df["svg_path"],
-        itertools.repeat(api)
+        itertools.repeat(api),
+        df["version"]
     ))
     return task_list
 
-task_list = generate_task_list(feature_prep_df, api)
 
 
 print("Running feature generation")
@@ -136,6 +136,8 @@ print("Running feature generation")
 #     - parallelize
 #     - buffer lines/points to create polygons
 #     - convert all features to multipolygons
+
+task_list = generate_task_list(feature_prep_df, api)
 
 valid_df = None
 errors_df = None

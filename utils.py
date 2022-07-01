@@ -58,7 +58,7 @@ def init_overpass_api():
     return api
 
 
-def load_input_data(base_dir, release_name, output_project_fields, id_field, location_field):
+def load_input_data(base_dir, release_name, output_project_fields, id_field, location_field, version_field=None):
     """Loads input datasets from various Excel sheets
 
     Makes column names uniform
@@ -79,13 +79,17 @@ def load_input_data(base_dir, release_name, output_project_fields, id_field, loc
     military_df["finance_type"] = "military"
     huawei_df["finance_type"] = "huawei"
     # merge datasets
-    input_data = pd.concat([development_df, military_df, huawei_df], axis=0)
+    all_df = pd.concat([development_df, military_df, huawei_df], axis=0)
 
-    input_data[[id_field, location_field] + output_project_fields].copy(deep=True)
-    input_data['id'] = input_data[id_field]
-    input_data['location'] = input_data[location_field]
+    input_df = all_df[output_project_fields].copy(deep=True)
+    input_df['id'] = all_df[id_field]
+    input_df['location'] = all_df[location_field]
+    if version_field:
+        input_df['version'] = all_df[version_field]
+    else:
+        input_df['version'] = None
 
-    return input_data
+    return input_df
 
 
 def subset_by_id(df, ids):
@@ -131,7 +135,7 @@ def split_and_match_text(text, split, match):
 
 def get_osm_links(input_data_df, osm_str, invalid_str_list=None, output_dir=None):
 
-    link_list_df = input_data_df[["id", "location"]].copy(deep=True)
+    link_list_df = input_data_df[["id", "location", "version"]].copy(deep=True)
 
     # keep rows where location field contains at least one osm link
     link_list_df['has_osm_str'] = link_list_df.location.notnull() & link_list_df.location.str.contains(osm_str)
@@ -185,6 +189,7 @@ def classify_osm_links(filtered_df, quiet=True):
     for ix, (_, row) in enumerate(filtered_df.iterrows()):
         project_id = row["id"]
         link = row["osm_link"]
+        version = row["version"]
 
         if link == '':
             continue
@@ -214,10 +219,10 @@ def classify_osm_links(filtered_df, quiet=True):
         if not quiet:
             print(f"\t{project_id}: {osm_type} {osm_id}")
 
-        tmp_feature_df_list.append([project_id, clean_link, osm_type, osm_id])
+        tmp_feature_df_list.append([project_id, clean_link, osm_type, osm_id, version])
 
 
-    feature_df = pd.DataFrame(tmp_feature_df_list, columns=["id", "clean_link", "osm_type", "osm_id"])
+    feature_df = pd.DataFrame(tmp_feature_df_list, columns=["id", "clean_link", "osm_type", "osm_id", "version"])
     feature_df["unique_id"] = range(len(feature_df))
     feature_df["index"] = feature_df["unique_id"]
     feature_df.set_index('index', inplace=True)
@@ -387,6 +392,12 @@ def get_soup(url, pretty_print=False, timeout=60):
     return soup
 
 
+def check_osm_version_number(soup, version):
+    current_version = soup.find('h4', text=re.compile('Version')).text.replace('\n', '').split('#')[-1]
+    version_match = int(current_version) == int(version)
+    return version_match
+
+
 def get_node_geom(clean_link):
     """Manage getting OSM node coordinates from OSM feature url
 
@@ -398,13 +409,8 @@ def get_node_geom(clean_link):
     Returns:
         shapely.geometry.Point: point geometry of node
     """
-    try:
-        soup = get_soup(clean_link)
-        feat = build_node_geom(soup)
-    except Exception as e:
-        print(f"\tusing old node version: {clean_link} \n\t\t {repr(e)}")
-        soup = get_soup(clean_link+"/history")
-        feat = build_node_geom(soup)
+    soup = get_soup(clean_link)
+    feat = build_node_geom(soup)
     return feat
 
 
@@ -422,26 +428,6 @@ def build_node_geom(soup):
     coords = [float(lon), float(lat)]
     # generate geojson compatible geometry string for feature
     feat = Point(coords)
-    return feat
-
-
-def get_way_geom(clean_link):
-    try:
-        soup = get_soup(clean_link)
-        feat = build_way_geom(soup)
-    except Exception as e:
-        print(f"\tusing old way version: {clean_link} \n\t\t {repr(e)}")
-        soup = get_soup(clean_link)
-        details = soup.find_all('div', {'class': 'details'})
-        if "Deleted" not in details[0].text:
-            print(f"\tNo previous way version found ({clean_link})")
-            raise
-        history_link = clean_link + "/history"
-        soup = get_soup(history_link)
-        history_soup = soup.find_all('div', {'class': 'browse-way'})
-        # currently just grabs first historical version, but
-        # could need to iterate if that version was bad for some reason
-        feat = build_way_geom(history_soup[1])
     return feat
 
 
@@ -607,10 +593,10 @@ def convert_osm_feat_to_multipolygon(fn):
     """
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        feat = fn(*args, **kwargs)
-        if feat.type != "MultiPolygon":
+        feat, flag = fn(*args, **kwargs)
+        if feat and feat.type != "MultiPolygon":
             feat = MultiPolygon([feat])
-        return feat
+        return feat, flag
     return wrapper
 
 
@@ -625,31 +611,47 @@ def buffer_osm_feat(fn):
     """
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        feat = fn(*args, **kwargs)
-        if feat.type not in ["Polygon", "MultiPolygon"]:
+        feat, flag = fn(*args, **kwargs)
+        if feat and feat.type not in ["Polygon", "MultiPolygon"]:
             feat = feat.buffer(0.00001)
-        return feat
+        return feat, flag
     return wrapper
 
 
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
-def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path, api):
+def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path, api, version=None):
     print(unique_id, osm_type)
+
     if osm_type == "directions":
         feat = get_directions_geom(clean_link, svg_path)
-    elif osm_type == "node":
-        feat = get_node_geom(clean_link)
-    elif osm_type == "way":
-        feat = get_way_geom(clean_link)
-    elif osm_type == "relation":
-        feat = get_relation_geom(osm_id, osm_type, api)
     else:
-        raise Exception(f"Invalid OSM type in link ({osm_type})", unique_id, None)
-    return feat
+        soup = get_soup(clean_link)
+        deleted = soup.find(text=re.compile('Deleted')) is not None
+
+        if deleted:
+            return (None, 'deleted')
+
+        if version is None:
+            version_match = True
+        else:
+            version_match = check_osm_version_number(soup, version)
+            if not version_match:
+                return (None, 'version_mismatch')
+
+        if osm_type == "node":
+            feat = build_node_geom(soup)
+        elif osm_type == "way":
+            feat = build_way_geom(soup)
+        elif osm_type == "relation":
+            feat = get_relation_geom(osm_id, osm_type, api)
+        else:
+            return (None, 'invalid osm type ({osm_type})')
+
+    return (feat, None)
 
 
-def process_results(tasl_results, valid_df, errors_df, merge_df):
+def process_results(task_results, valid_df, errors_df, merge_df):
     # ---------
     # column name for join field in original df
     results_join_field_name = "unique_id"
@@ -657,13 +659,18 @@ def process_results(tasl_results, valid_df, errors_df, merge_df):
     results_join_field_loc = 0
     # ---------
 
-    # join function tasl_results back to df
-    results_df = pd.DataFrame(tasl_results, columns=["status", "message", results_join_field_name, "feature"])
+    # join function task_results back to df
+    results_df = pd.DataFrame(task_results, columns=["status", "message", results_join_field_name, "result"])
     # results_df.drop(["feature"], axis=1, inplace=True)
     results_df[results_join_field_name] = results_df[results_join_field_name].apply(lambda x: x[results_join_field_loc])
+    results_df['feature'] = results_df['result'].apply(lambda x: x[0])
+    results_df['flag'] = results_df['result'].apply(lambda x: x[1])
+    results_df.drop(["result"], axis=1, inplace=True)
 
     output_df = merge_df.merge(results_df, on=results_join_field_name, how="left")
 
+    # set status to 1 for any items with feature == None and a non-none flag
+    output_df.loc[output_df.feature.isnull() & output_df.flag.notnull(), "status"] = 2
 
     if valid_df is None:
         valid_df = output_df[output_df["status"] == 0].copy()
