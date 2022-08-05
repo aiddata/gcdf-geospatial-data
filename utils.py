@@ -20,11 +20,33 @@ from overpass.errors import TimeoutError, ServerLoadError, MultipleRequestsError
 import osm2geojson
 from selenium import webdriver
 
+import prefect
+from prefect import Client
+from prefect.run_configs import LocalRun
+from prefect import task
+from prefect.engine import state
 
+
+def run_flow(flow, executor, prefect_cloud_enabled, project_name):
+
+    # flow.run_config = LocalRun()
+    flow.executor = executor
+
+    if prefect_cloud_enabled:
+        flow_id = flow.register(project_name=project_name)
+        client = Client()
+        run_id = client.create_flow_run(flow_id=flow_id)
+        state = run_id
+    else:
+        state = flow.run()
+
+    return state
+
+@task
 def save_df(df, path):
     """Save a dataframe to a csv file
     """
-    df.to_csv(path, index=False)
+    df.to_csv(path, index=True)
 
 
 def init_output_dir(output_dir):
@@ -81,6 +103,9 @@ def load_input_data(base_dir, release_name, output_project_fields, id_field, loc
     # merge datasets
     all_df = pd.concat([development_df, military_df, huawei_df], axis=0)
 
+    all_df.dropna(axis=0, how='all', inplace=True)
+    all_df.dropna(axis=1, how='all', inplace=True)
+
     input_df = all_df[output_project_fields].copy(deep=True)
     input_df['id'] = all_df[id_field]
     input_df['location'] = all_df[location_field]
@@ -89,33 +114,111 @@ def load_input_data(base_dir, release_name, output_project_fields, id_field, loc
     else:
         input_df['version'] = None
 
+    input_df['precision'] = "precise"
+
     return input_df
 
 
-def subset_by_id(df, ids):
-    return df.loc[df["id"].isin(ids)].copy()
+def load_simple_input_data(base_dir, release_name, output_project_fields, id_field, location_field, precision_field=None, version_field=None):
+    """Loads input datasets from various Excel sheets
+
+    Makes column names uniform
+    Creates field to indicate source dataset
+
+    Returns:
+        pandas.DataFrame: combined input dataframe
+    """
+    # read in separate datasets
+    all_df = pd.read_csv(base_dir / "input_data" / release_name / "OSM2018sorted.csv")
+
+    all_df.dropna(axis=0, how='all', inplace=True)
+    all_df.dropna(axis=1, how='all', inplace=True)
+
+    # add field to indicate source dataset
+    all_df["finance_type"] = "all"
+
+    input_df = all_df[output_project_fields].copy(deep=True)
+    input_df['id'] = all_df[id_field]
+    input_df['location'] = all_df[location_field]
+    if version_field:
+        input_df['version'] = all_df[version_field]
+    else:
+        input_df['version'] = None
+
+    if precision_field:
+        input_df['precision'] = all_df[precision_field]
+    else:
+        input_df['precision'] = "precise"
+
+    return input_df
 
 
-def init_existing(output_dir, existing_timestamp, update_mode=False, update_ids=None):
-    existing_dir = output_dir.parent / existing_timestamp
-    existing_link_df_path = existing_dir / "osm_valid_links.csv"
-    existing_feature_prep_df_path = existing_dir / "feature_prep.csv"
+# def init_existing(output_dir, existing_timestamp, update_mode=False, update_ids=None):
+#     existing_dir = output_dir.parent / existing_timestamp
 
-    full_feature_prep_df = pd.read_csv(existing_feature_prep_df_path)
+#     existing_feature_prep_df_path = existing_dir / "feature_prep.csv"
+#     full_feature_prep_df = pd.read_csv(existing_feature_prep_df_path)
 
-    link_df_path = output_dir / "osm_links.csv"
+#     if update_mode:
+#         # copy geojsons from update_timestamp geojsons dir to current timestamp geojsons dir
+#         update_target_geojsons = existing_dir / "geojsons"
+#         for gj in update_target_geojsons.iterdir():
+#             if int(gj.name.split(".")[0]) not in update_ids:
+#                 shutil.copy(gj, output_dir / "geojsons")
 
-    # copy previously generated files to directory for current run
-    shutil.copyfile(existing_link_df_path, link_df_path)
+#         full_feature_prep_df = full_feature_prep_df.loc[full_feature_prep_df["id"].isin(update_ids)].copy()
 
-    if update_mode:
-        # copy geojsons from update_timestamp geojsons dir to current timestamp geojsons dir
-        update_target_geojsons = existing_dir / "geojsons"
-        for gj in update_target_geojsons.iterdir():
-            if int(gj.name.split(".")[0]) not in update_ids:
-                shutil.copy(gj, output_dir / "geojsons")
+#     return full_feature_prep_df
 
-    return full_feature_prep_df
+
+def create_unique_osm_id(row):
+    if pd.isnull(row.osm_type):
+        uid = None
+    elif row.osm_type == 'directions':
+        uid = row.clean_link
+    elif pd.isnull(row.osm_version):
+        try:
+            uid = str(int(row.osm_id))
+        except:
+            print (row)
+            raise
+    else:
+        uid = f'{int(row.osm_id)}_{row.osm_version}'
+
+    return uid
+
+
+def load_existing(existing_dir, link_df, use_existing_feature):
+
+    df = link_df.copy()
+    existing_feature_prep_path = existing_dir / "feature_prep.csv"
+    existing_processing_valid_path = existing_dir / "processing_valid.csv"
+
+    if existing_feature_prep_path.exists():
+        # join svg_path col to current run
+        existing_feature_prep_df = pd.read_csv(existing_feature_prep_path)
+        svg_df = existing_feature_prep_df[['clean_link', 'svg_path']].loc[existing_feature_prep_df.svg_path.notnull()].copy()
+        # deduplicate svg_df
+        svg_df.drop_duplicates('clean_link', inplace=True)
+        df = df.merge(svg_df, on='clean_link', how='left')
+
+        if use_existing_feature and existing_processing_valid_path.exists():
+            # join raw feature data to current run
+
+            df['merge_field'] = df.apply(lambda x: create_unique_osm_id(x), axis=1)
+            existing_processing_valid_df = pd.read_csv(existing_processing_valid_path)
+            feature_df = existing_processing_valid_df.loc[existing_processing_valid_df.feature.notnull()].copy()
+            feature_df['merge_field'] = feature_df.apply(lambda x: create_unique_osm_id(x), axis=1)
+            feature_df = feature_df[['merge_field', 'feature']].copy()
+            # deduplicate feature_df
+            feature_df.drop_duplicates('merge_field', inplace=True)
+            df = df.merge(feature_df, on='merge_field', how='left')
+            df.drop(columns=['merge_field'], inplace=True)
+
+    # if update_mode:
+    #     df = df.loc[df["id"].isin(update_ids)].copy()
+
+    return df
 
 
 def split_and_match_text(text, split, match):
@@ -129,26 +232,90 @@ def split_and_match_text(text, split, match):
     Returns:
         list: list of matching elements
     """
-    link_list = [i for i in str(text).split(split) if match in i]
+    if isinstance(split, str):
+        link_list = [i for i in str(text).split(split) if match in i]
+    elif isinstance(split, list):
+        rsplit = re.compile("|".join(split)).split
+        link_list = [i for i in rsplit(str(text)) if match in i]
+
     return link_list
 
 
-def get_osm_links(input_data_df, osm_str, invalid_str_list=None, output_dir=None):
+def clean_osm_link(link, version=None):
 
-    link_list_df = input_data_df[["id", "location", "version"]].copy(deep=True)
+    osm_id = None
+
+    # extract if link is for a way, node, relation, directions
+    osm_type = link.split("/")[3].split("?")[0]
+
+    if osm_type == "directions":
+        clean_link = link.split("#map=")[0]
+        clean_link = clean_link[clean_link.index("http"):]
+        while not clean_link[-1].isdigit():
+            clean_link = clean_link[:-1]
+
+    elif osm_type in ["node", "way", "relation"]:
+        # extract the osm id for the way/node/relation from the url
+        #   (gets rid of an extra stuff after the id as well)
+        # osm_id = link.split("/")[4].split("#")[0].split(".")[0]
+        osm_id = re.match("([0-9]*)", link.split("/")[4]).groups()[0]
+        # rebuild a clean link
+        clean_link = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
+
+    else:
+        clean_link = "Invalid osm_type"
+
+
+    return clean_link, osm_type, osm_id
+
+
+def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None):
+
+    link_list_df = base_df.copy(deep=True)
+
 
     # keep rows where location field contains at least one osm link
     link_list_df['has_osm_str'] = link_list_df.location.notnull() & link_list_df.location.str.contains(osm_str)
     # get osm links from location field
-    link_list_df["osm_list"] = link_list_df['location'].apply(lambda x: split_and_match_text(x, " ", osm_str))
+    link_list_df["osm_list"] = link_list_df['location'].apply(lambda x: split_and_match_text(x, [" ", "\n"], osm_str))
 
-    link_df = link_list_df.explode('osm_list').copy(deep=True)
-    link_df.rename(columns={"osm_list": "osm_link"}, inplace=True)
-    link_df.osm_link.fillna("", inplace=True)
+    link_list_df['has_precision_vals'] = link_list_df.precision.notnull()
+    link_list_df["precision_list"] = link_list_df['precision'].apply(lambda x: [i for i in str(x).split(', ') if i != ''])
 
-    link_df['valid'] = False
+    link_list_df['osm_count'] = link_list_df['osm_list'].apply(lambda x: len(x))
+    link_list_df['precision_count'] = link_list_df['precision_list'].apply(lambda x: len(x))
+
+    # placeholder for if we ever utilize osm version history
+    link_list_df["osm_version"] = link_list_df["version"]
+
+
+    link_list_df['has_matching_counts'] = link_list_df['osm_count'] == link_list_df['precision_count']
+
+    link_list_df['osm_tuple'] = link_list_df.loc[link_list_df.has_matching_counts].apply(lambda x: list(zip(x.osm_list, x.precision_list)), axis=1)
+
+
+    link_df = link_list_df.explode('osm_tuple').copy(deep=True)
+
+    link_df["unique_id"] = range(len(link_df))
+    link_df["index"] = link_df["unique_id"]
+    link_df.set_index('index', inplace=True)
+
+
+    link_df[['osm_link', 'osm_precision']] = link_df.apply(lambda x: x.osm_tuple if isinstance(x.osm_tuple, tuple) else (None, None), axis=1, result_type='expand')
+
+
+    link_df['valid'] = True
     if invalid_str_list:
-        link_df.loc[link_df.has_osm_str & ~link_df.osm_link.str.contains('|'.join(invalid_str_list)), 'valid'] = True
+        link_df.loc[~link_df.has_osm_str, 'valid'] = False
+        link_df.loc[link_df.osm_link.isnull(), 'valid'] = False
+        link_df.loc[link_df.valid & link_df.osm_link.str.contains('|'.join(invalid_str_list)), 'valid'] = False
+
+    link_df.loc[link_df.osm_link == '', 'valid'] = False
+    link_df.loc[~link_df.has_precision_vals, 'valid'] = False
+    link_df.loc[~link_df.has_matching_counts, 'valid'] = False
+
+    link_df[["clean_link", "osm_type", "osm_id"]] = link_df.apply(lambda x: clean_osm_link(x.osm_link, x.osm_version) if x.valid else (None, None, None), axis=1, result_type='expand')
+
 
     if output_dir:
         link_df_path = output_dir / "osm_links.csv"
@@ -183,81 +350,48 @@ directions_list = [j for i in osm_df["osm_list"].to_list() for j in i if "direct
 search_list = [j for i in osm_df["osm_list"].to_list() for j in i if "search" in str(j)]
 query_list = [j for i in osm_df["osm_list"].to_list() for j in i if "query" in str(j)]
 """
-def classify_osm_links(filtered_df, quiet=True):
-    tmp_feature_df_list = []
-
-    for ix, (_, row) in enumerate(filtered_df.iterrows()):
-        project_id = row["id"]
-        link = row["osm_link"]
-        version = row["version"]
-
-        if link == '':
-            continue
-
-        osm_id = None
-
-        # extract if link is for a way, node, relation, directions
-        osm_type = link.split("/")[3].split("?")[0]
-
-        if osm_type == "directions":
-            clean_link = link.split("#map=")[0]
-            clean_link = clean_link[clean_link.index("http"):]
-            while not clean_link[-1].isdigit():
-                clean_link = clean_link[:-1]
-
-        elif osm_type in ["node", "way", "relation"]:
-            # extract the osm id for the way/node/relation from the url
-            #   (gets rid of an extra stuff after the id as well)
-            # osm_id = link.split("/")[4].split("#")[0].split(".")[0]
-            osm_id = re.match("([0-9]*)", link.split("/")[4]).groups()[0]
-            # rebuild a clean link
-            clean_link = f"https://www.openstreetmap.org/{osm_type}/{osm_id}"
-
-        else:
-            continue
-
-        if not quiet:
-            print(f"\t{project_id}: {osm_type} {osm_id}")
-
-        tmp_feature_df_list.append([project_id, clean_link, osm_type, osm_id, version])
 
 
-    feature_df = pd.DataFrame(tmp_feature_df_list, columns=["id", "clean_link", "osm_type", "osm_id", "version"])
-    feature_df["unique_id"] = range(len(feature_df))
-    feature_df["index"] = feature_df["unique_id"]
-    feature_df.set_index('index', inplace=True)
+def osm_type_summary(df):
 
-    return feature_df
+    summary_str = f"""
+    {len(set(df.id))} projects provided
+    {len(set(df.loc[df.has_osm_str].id))} projects contain OSM links
+    {len(df.loc[df.has_osm_str & ~df.valid])} non-parseable osm links over {len(set(df.loc[df.has_osm_str & ~df.valid].id))} projects
+    {len(df.loc[df.valid])} valid links over {len(set(df.loc[df.valid].id))} projects
+    {len(set.intersection(set(df.loc[df.has_osm_str & ~df.valid, 'id']), set(df.loc[df.valid].id)))} projects contain both valid and invalid links
 
+    Distribution of valid OSM link types:
+    """
+    for i,j in df.loc[df.valid].osm_type.value_counts().to_dict().items():
+        summary_str += f'\n\t\t{i}: {j}'
 
-def osm_type_summary(full_df, valid_df, summary=False):
-
-    if summary:
-
-        summary_str = f"""
-        {len(set(full_df.id))} projects provided
-        {len(set(full_df.loc[full_df.has_osm_str].id))} projects contain OSM links
-        {len(full_df.loc[full_df.has_osm_str & ~full_df.valid])} non-parseable osm links over {len(set(full_df.loc[full_df.has_osm_str & ~full_df.valid].id))} projects
-        {len(valid_df)} valid links over {len(set(valid_df.id))} projects
-        {len(set.intersection(set(full_df.loc[full_df.has_osm_str & ~full_df.valid, 'id']), set(valid_df.id)))} projects contain both valid and invalid links
-
-        Distribution of valid OSM link types:
-        """
-        for i,j in valid_df.osm_type.value_counts().to_dict().items():
-            summary_str += f'\n\t\t{i}: {j}'
-
-        print(summary_str)
+    print(summary_str)
 
 
-def sample_features(df, sample_size):
+def sample_and_validate(df, sample_size, summary=True):
     """sample features from each osm link type
     """
+
+    if summary:
+        osm_type_summary(df)
+
+    valid_df = df.loc[df.valid].copy()
+
     if sample_size <= 0:
-        sample_df = df.copy(deep=True)
+        sample_df = valid_df.copy(deep=True)
     else:
-        sample_df = df.groupby('osm_type').apply(lambda x: x.sample(n=sample_size)).reset_index(drop=True)
+        sample_df = valid_df.groupby('osm_type').apply(lambda x: x.sample(n=sample_size)).reset_index(drop=True)
     sample_df['index'] = sample_df['unique_id']
     sample_df.set_index('index', inplace=True)
+
+    if 'svg_path' not in sample_df.columns:
+        sample_df['svg_path'] = None
+    if 'feature' not in sample_df.columns:
+        sample_df['feature'] = None
+    if 'flag' not in sample_df.columns:
+        sample_df['flag'] = None
+
     return sample_df
 
 
@@ -381,7 +515,8 @@ def get_soup(url, pretty_print=False, timeout=60):
                 raise requests.exceptions.HTTPError(f"Request failed - Status code: {page.status_code} - URL: {url}")
         except:
             if timer >= timeout:
-                raise requests.exceptions.Timeout(f"Timeout exceeded waiting for request ({url})")
+                # raise requests.exceptions.Timeout(f"Timeout exceeded waiting for request ({url})")
+                return -1
             else:
                 time.sleep(2)
                 timer += 2
@@ -593,10 +728,10 @@ def convert_osm_feat_to_multipolygon(fn):
     """
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        feat, flag = fn(*args, **kwargs)
+        unique_id, feat, flag = fn(*args, **kwargs)
         if feat and feat.type != "MultiPolygon":
             feat = MultiPolygon([feat])
-        return feat, flag
+        return unique_id, feat, flag
     return wrapper
 
 
@@ -611,33 +746,61 @@ def buffer_osm_feat(fn):
     """
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        feat, flag = fn(*args, **kwargs)
+        unique_id, feat, flag = fn(*args, **kwargs)
         if feat and feat.type not in ["Polygon", "MultiPolygon"]:
             feat = feat.buffer(0.00001)
-        return feat, flag
+        return unique_id, feat, flag
     return wrapper
 
 
+def handle_failure(task, old_state, new_state):
+    if isinstance(new_state, state.Failed):
+        return state.Success(result='unknown failure')
+    else:
+        return new_state
+
+
+@task
+def process(r, t, output_path):
+    combined = zip(r, t)
+    results = []
+    for rr, tt in combined:
+        if rr == 'unknown failure':
+            results.append((tt[0], None, 'unknown failure'))
+        else:
+            results.append(rr)
+
+    results_df = pd.DataFrame(results, columns=["unique_id", "feature", "flag"])
+    results_df.to_csv(output_path, index=False)
+
+
+@task(state_handlers=[handle_failure])
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
 def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path, api, version=None):
     print(unique_id, osm_type)
 
+    logger = prefect.context.get("logger")
+    logger.info(clean_link)
+
     if osm_type == "directions":
         feat = get_directions_geom(clean_link, svg_path)
     else:
         soup = get_soup(clean_link)
+        if soup == -1:
+            return (unique_id, None, 'invalid url')
+
         deleted = soup.find(text=re.compile('Deleted')) is not None
 
         if deleted:
-            return (None, 'deleted')
+            return (unique_id, None, 'deleted')
 
         if version is None:
             version_match = True
         else:
             version_match = check_osm_version_number(soup, version)
             if not version_match:
-                return (None, 'version_mismatch')
+                return (unique_id, None, 'version_mismatch')
 
         if osm_type == "node":
             feat = build_node_geom(soup)
@@ -646,40 +809,47 @@ def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path, api, version
         elif osm_type == "relation":
             feat = get_relation_geom(osm_id, osm_type, api)
         else:
-            return (None, 'invalid osm type ({osm_type})')
+            return (unique_id, None, 'invalid osm type ({osm_type})')
 
-    return (feat, None)
+    return (unique_id, feat, None)
 
 
-def process_results(task_results, valid_df, errors_df, merge_df):
+@task(nout=2)
+# def process_results(task_results, valid_df, errors_df, merge_df):
+def process_results(task_results, merge_df):
     # ---------
     # column name for join field in original df
     results_join_field_name = "unique_id"
     # position of join field in each tuple in task list
-    results_join_field_loc = 0
+    # results_join_field_loc = 0
     # ---------
 
     # join function task_results back to df
-    results_df = pd.DataFrame(task_results, columns=["status", "message", results_join_field_name, "result"])
-    # results_df.drop(["feature"], axis=1, inplace=True)
-    results_df[results_join_field_name] = results_df[results_join_field_name].apply(lambda x: x[results_join_field_loc])
-    results_df['feature'] = results_df['result'].apply(lambda x: x[0])
-    results_df['flag'] = results_df['result'].apply(lambda x: x[1])
-    results_df.drop(["result"], axis=1, inplace=True)
+    # results_df = pd.DataFrame(task_results, columns=["status", "message", results_join_field_name, "result"])
+    results_df = pd.DataFrame(task_results, columns=["unique_id", "feature", "flag"])
+    # results_df[results_join_field_name] = results_df[results_join_field_name].apply(lambda x: x[results_join_field_loc])
+    # results_df['feature'] = results_df['result'].apply(lambda x: x[0])
+    # results_df['flag'] = results_df['result'].apply(lambda x: x[1])
+    # results_df.drop(["result"], axis=1, inplace=True)
 
     output_df = merge_df.merge(results_df, on=results_join_field_name, how="left")
 
     # set status to 1 for any items with feature == None and a non-none flag
-    output_df.loc[output_df.feature.isnull() & output_df.flag.notnull(), "status"] = 2
+    # output_df.loc[output_df.feature.isnull() & output_df.flag.notnull(), "status"] = 2
 
-    if valid_df is None:
-        valid_df = output_df[output_df["status"] == 0].copy()
-    else:
-        valid_df = pd.concat([valid_df, output_df.loc[output_df.status == 0]])
+    # if valid_df is None:
+    # valid_df = output_df[output_df["status"] == 0].copy()
+    # else:
+    #     valid_df = pd.concat([valid_df, output_df.loc[output_df.status == 0]])
 
 
-    errors_df = output_df[output_df["status"] > 0].copy()
+    # errors_df = output_df[output_df["status"] > 0].copy()
+
+    valid_df = output_df[output_df.feature.notnull() & output_df.flag.isnull()].copy()
+    errors_df = output_df[output_df.feature.isnull() & output_df.flag.notnull()].copy()
+
     print("\t{} errors found out of {} tasks".format(len(errors_df), len(output_df)))
+
 
     return valid_df, errors_df
 
@@ -758,6 +928,24 @@ def prepare_single_feature(row):
     props = generate_feature_properties(row)
     path = row.geojson_path
     return (path, geom, props)
+
+
+def load_project_geojsons(output_dir, id_list):
+
+    gdf_list = []
+    for i in id_list:
+        gj_path = output_dir / "geojsons" / f'{i}.geojson'
+        gdf = gpd.read_file(gj_path)
+        gdf_list.append(gdf)
+
+    combined_gdf = pd.concat(gdf_list)
+
+    # date fields can get loaded a datetime objects which can geopandas doesn't always like to output, so convert to string to be safe
+    for c in combined_gdf.columns:
+        if c.endswith("Date (MM/DD/YYYY)"):
+            combined_gdf[c] = combined_gdf[c].apply(lambda x: str(x))
+
+    return combined_gdf
 
 
 def load_all_geojsons(output_dir):
