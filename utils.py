@@ -774,12 +774,13 @@ def process(r, t, output_path):
     results_df.to_csv(output_path, index=False)
 
 
-@task(state_handlers=[handle_failure])
+@task(log_stdout=True, state_handlers=[handle_failure], task_run_name=lambda **kwargs: f"{kwargs['task'][1]}")
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
-def get_osm_feat(unique_id, clean_link, osm_type, osm_id, svg_path, api, version=None):
-    print(unique_id, osm_type)
+def get_osm_feat(task):
+    unique_id, clean_link, osm_type, osm_id, svg_path, api, version = task
 
+    print(unique_id, osm_type)
     logger = prefect.context.get("logger")
     logger.info(clean_link)
 

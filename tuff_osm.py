@@ -150,6 +150,12 @@ if prepare_only:
 # ==========================================================
 # process osm links into raw feature data
 
+print("Running feature generation")
+# get_osm_feat for each row in feature_prep_df
+#     - parallelize
+#     - buffer lines/points to create polygons
+#     - convert all features to multipolygons
+
 
 def generate_task_list(df, api):
     # generate list of tasks to iterate over
@@ -165,21 +171,9 @@ def generate_task_list(df, api):
     return task_list
 
 
-def task_map(task):
-    # return utils.get_osm_feat(*task)
-    return utils.get_osm_feat(task[0], task[1], task[2], task[3], task[4], task[5], task[6])
-
-
-print("Running feature generation")
-# get_osm_feat for each row in feature_prep_df
-#     - parallelize
-#     - buffer lines/points to create polygons
-#     - convert all features to multipolygons
-
 # only generate tasks for rows that have not been processed yet (checking field from potential existing data)
 task_df = feature_prep_df.loc[feature_prep_df.feature.isnull() & feature_prep_df.flag.isnull()].copy()
 task_list = generate_task_list(task_df, api)
-
 
 
 # BOTTLENECK #2
@@ -187,9 +181,9 @@ task_list = generate_task_list(task_df, api)
 
 # prefect
 with Flow("osm-features") as flow:
-    test_task_list = task_list
-    tmp_task_results = apply_map(task_map, test_task_list)
-    utils.process(tmp_task_results, test_task_list)
+    task_results = utils.get_osm_feat.map(task_list[:2])
+    utils.process(task_results, task_list, task_results_path)
+
 
 state = utils.run_flow(flow, executor, prefect_cloud_enabled, prefect_project_name)
 

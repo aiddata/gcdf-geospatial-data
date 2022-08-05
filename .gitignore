@@ -20,3 +20,4 @@ examples/ntl_demo/viirs_ntl_monthly
 examples/generate_buffers/*.geojson
 examples/rasterize/rasters
 latest/*.geojson
+*.tif.aux.xml
