@@ -9,6 +9,7 @@ import warnings
 import functools
 import re
 import shutil
+import multiprocessing as mp
 
 from bs4 import BeautifulSoup as BS
 from shapely.geometry import Point, Polygon, LineString, MultiPolygon
@@ -395,7 +396,17 @@ def sample_and_validate(df, sample_size, summary=True):
     return sample_df
 
 
-def generate_svg_paths(feature_prep_df, overwrite=False):
+def run_task(unique_id, clean_link):
+    return [unique_id, get_svg_path(clean_link)]
+
+
+def quit_driver(n):
+    driver.quit()
+
+
+def generate_svg_paths(feature_prep_df, overwrite=False, upper_limit=False, nprocs=2):
+
+    feature_prep_df = feature_prep_df.copy()
 
     if overwrite or 'svg_path' not in feature_prep_df.columns:
         overwrite_query = 1
@@ -404,35 +415,53 @@ def generate_svg_paths(feature_prep_df, overwrite=False):
 
     task_list = feature_prep_df.loc[(feature_prep_df.osm_type == "directions") & overwrite_query][['unique_id', 'clean_link']].values
 
-    # results = []
+    if upper_limit:
+        task_list = task_list[:upper_limit]
+
+
+    # ================
 
     if len(task_list) > 0:
-        driver = create_web_driver()
+        if len(task_list) < nprocs:
+            nprocs = len(task_list)
+        with mp.Pool(nprocs, initializer=create_web_driver) as pool:
+            results_list = list(pool.starmap(run_task, task_list))
+            for p in results_list:
+                feature_prep_df.loc[p[0], "svg_path"] = p[1]
+            _ = pool.map(quit_driver, range(nprocs))
 
-        for unique_id, clean_link in task_list:
-            print(clean_link)
-            d = None
-            attempts = 0
-            max_attempts = 5
-            while not d and attempts < max_attempts:
-                attempts += 1
-                try:
-                    d = get_svg_path(clean_link, driver)
-                except Exception as e:
-                    print(f"\tAttempt {attempts}/{max_attempts}", repr(e))
-            # results.append([unique_id, d])
-            feature_prep_df.loc[unique_id, "svg_path"] = d
+    # ================
 
-        driver.quit()
+    # # results = []
+    # if len(task_list) > 0:
+    #     driver = create_web_driver()
 
-    # result_df = pd.DataFrame(results, columns=["unique_id", "svg_path"])
+    #     for unique_id, clean_link in task_list:
+    #         print(clean_link)
+    #         d = None
+    #         attempts = 0
+    #         max_attempts = 5
+    #         while not d and attempts < max_attempts:
+    #             attempts += 1
+    #             try:
+    #                 d = get_svg_path(clean_link, driver)
+    #             except Exception as e:
+    #                 print(f"\tAttempt {attempts}/{max_attempts}", repr(e))
+    #         # results.append([unique_id, d])
+    #         feature_prep_df.loc[unique_id, "svg_path"] = d
 
-    # return_df = feature_prep_df.merge(result_df, how="left", on="unique_id")
+    #     driver.quit()
+
+    # # result_df = pd.DataFrame(results, columns=["unique_id", "svg_path"])
+    # # return_df = feature_prep_df.merge(result_df, how="left", on="unique_id")
+
+    # ================
 
     return feature_prep_df
 
 
-def get_svg_path(url, driver, max_attempts=10):
+
+def get_svg_path(url, driverx=None, max_attempts=10):
     """Get SVG path data from leaflet map at specified url
 
     Only specifically tested using OpenStreetMap 'directions' results
@@ -448,6 +477,7 @@ def get_svg_path(url, driver, max_attempts=10):
         str: SVG path element data
     """
     driver.get(url)
+    time.sleep(2)
     attempts = 0
     d = None
     while not d:
@@ -460,6 +490,7 @@ def get_svg_path(url, driver, max_attempts=10):
                 raise Exception("max_attempts exceeded waiting for page to load")
             else:
                 attempts += 1
+    # driver.close()
     return d
 
 
@@ -482,7 +513,7 @@ def create_web_driver():
     #     sleep_val = random.randint(0, max_workers)
     #     print(f"Sleeping for {sleep_val} seconds before starting...")
     #     time.sleep(sleep_val)
-
+    global driver
     driver = webdriver.Firefox(executable_path=geckodriver_path, options=options, firefox_profile=profile)
 
     driver.set_window_size(1920*10, 1080*10)

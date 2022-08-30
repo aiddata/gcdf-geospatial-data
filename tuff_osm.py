@@ -138,7 +138,7 @@ sampled_feature_prep_df = utils.sample_and_validate(link_df, sample_size=-1, sum
 # BOTTLENECK #1
 # TODO: figure out how to parallelize this (multiple webdrivers seems to be causing issues)
 # TODO: deduplicate svg links before processing
-feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=False)
+feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=True, upper_limit=None, nprocs=max_workers)
 
 utils.save_df.run(feature_prep_df, feature_prep_df_path)
 
