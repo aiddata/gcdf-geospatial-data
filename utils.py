@@ -404,7 +404,7 @@ def quit_driver(n):
     driver.quit()
 
 
-def generate_svg_paths(feature_prep_df, overwrite=False, upper_limit=False, nprocs=2):
+def generate_svg_paths(feature_prep_df, overwrite=False, upper_limit=False, nprocs=1):
 
     feature_prep_df = feature_prep_df.copy()
 
@@ -421,47 +421,46 @@ def generate_svg_paths(feature_prep_df, overwrite=False, upper_limit=False, npro
 
     # ================
 
+
     if len(task_list) > 0:
+
         if len(task_list) < nprocs:
             nprocs = len(task_list)
-        with mp.Pool(nprocs, initializer=create_web_driver) as pool:
-            results_list = list(pool.starmap(run_task, task_list))
-            for p in results_list:
-                feature_prep_df.loc[p[0], "svg_path"] = p[1]
-            _ = pool.map(quit_driver, range(nprocs))
 
-    # ================
+        if nprocs > 1:
 
-    # # results = []
-    # if len(task_list) > 0:
-    #     driver = create_web_driver()
 
-    #     for unique_id, clean_link in task_list:
-    #         print(clean_link)
-    #         d = None
-    #         attempts = 0
-    #         max_attempts = 5
-    #         while not d and attempts < max_attempts:
-    #             attempts += 1
-    #             try:
-    #                 d = get_svg_path(clean_link, driver)
-    #             except Exception as e:
-    #                 print(f"\tAttempt {attempts}/{max_attempts}", repr(e))
-    #         # results.append([unique_id, d])
-    #         feature_prep_df.loc[unique_id, "svg_path"] = d
+            with mp.Pool(nprocs, initializer=create_web_driver) as pool:
+                results_list = list(pool.starmap(run_task, task_list))
+                for p in results_list:
+                    feature_prep_df.loc[p[0], "svg_path"] = p[1]
+                _ = pool.map(quit_driver, range(nprocs))
 
-    #     driver.quit()
+        else:
 
-    # # result_df = pd.DataFrame(results, columns=["unique_id", "svg_path"])
-    # # return_df = feature_prep_df.merge(result_df, how="left", on="unique_id")
+            driver = create_web_driver()
 
-    # ================
+            for unique_id, clean_link in task_list:
+                print(clean_link)
+                d = None
+                attempts = 0
+                max_attempts = 5
+                while not d and attempts < max_attempts:
+                    attempts += 1
+                    try:
+                        d = get_svg_path(clean_link, driver)
+                    except Exception as e:
+                        print(f"\tAttempt {attempts}/{max_attempts}", repr(e))
+                # results.append([unique_id, d])
+                feature_prep_df.loc[unique_id, "svg_path"] = d
+
+            driver.quit()
 
     return feature_prep_df
 
 
 
-def get_svg_path(url, driverx=None, max_attempts=10):
+def get_svg_path(url, fixed_driver=None, max_attempts=10):
     """Get SVG path data from leaflet map at specified url
 
     Only specifically tested using OpenStreetMap 'directions' results
@@ -476,6 +475,8 @@ def get_svg_path(url, driverx=None, max_attempts=10):
     Returns:
         str: SVG path element data
     """
+    if fixed_driver is not None:
+        driver = fixed_driver
     driver.get(url)
     time.sleep(2)
     attempts = 0
