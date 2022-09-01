@@ -8,7 +8,6 @@ import random
 import warnings
 import functools
 import re
-import shutil
 import multiprocessing as mp
 
 from bs4 import BeautifulSoup as BS
@@ -22,32 +21,25 @@ import osm2geojson
 from selenium import webdriver
 
 import prefect
-from prefect import Client
-from prefect.run_configs import LocalRun
 from prefect import task
-from prefect.engine import state
+# from prefect import Client, task
+# from prefect.engine import state
 
 
-def run_flow(flow, executor, prefect_cloud_enabled, project_name):
+# def run_flow(flow, executor, prefect_cloud_enabled, project_name):
 
-    # flow.run_config = LocalRun()
-    flow.executor = executor
+#     # flow.run_config = LocalRun()
+#     flow.executor = executor
 
-    if prefect_cloud_enabled:
-        flow_id = flow.register(project_name=project_name)
-        client = Client()
-        run_id = client.create_flow_run(flow_id=flow_id)
-        state = run_id
-    else:
-        state = flow.run()
+#     if prefect_cloud_enabled:
+#         flow_id = flow.register(project_name=project_name)
+#         client = Client()
+#         run_id = client.create_flow_run(flow_id=flow_id)
+#         state = run_id
+#     else:
+#         state = flow.run()
 
-    return state
-
-@task
-def save_df(df, path):
-    """Save a dataframe to a csv file
-    """
-    df.to_csv(path, index=True)
+#     return state
 
 
 def init_output_dir(output_dir):
@@ -396,6 +388,48 @@ def sample_and_validate(df, sample_size, summary=True):
     return sample_df
 
 
+def create_web_driver():
+
+    # chromedriver_path = "./chromedriver"
+    # options = webdriver.ChromeOptions()
+    # options.binary_location = "./chrome-linux/chrome"
+    # options.headless = True
+    # driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
+
+    geckodriver_path = "./geckodriver"
+    options = webdriver.FirefoxOptions()
+    options.headless = False
+    # options.headless = True
+
+    options.add_argument("--disable-extensions")
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-application-cache')
+    options.add_argument('--disable-gpu')
+    options.add_argument("--disable-dev-shm-usage")
+
+    options.binary_location = "./firefox/firefox-bin"
+
+    profile = webdriver.FirefoxProfile()
+    profile.accept_untrusted_certs = True
+
+    profile.set_preference("browser.cache.disk.enable", False)
+    profile.set_preference("browser.cache.memory.enable", False)
+    profile.set_preference("browser.cache.offline.enable", False)
+    profile.set_preference("network.http.use-cache", False)
+
+    # import random
+    # if parallel:
+    #     sleep_val = random.randint(0, max_workers)
+    #     print(f"Sleeping for {sleep_val} seconds before starting...")
+    #     time.sleep(sleep_val)
+
+    global driver
+    driver = webdriver.Firefox(executable_path=geckodriver_path, options=options, firefox_profile=profile)
+
+    driver.set_window_size(1920*10, 1080*10)
+    # return driver
+
+
 def run_task(unique_id, clean_link):
     return [unique_id, get_svg_path(clean_link)]
 
@@ -419,16 +453,12 @@ def generate_svg_paths(feature_prep_df, overwrite=False, upper_limit=False, npro
         task_list = task_list[:upper_limit]
 
 
-    # ================
-
-
     if len(task_list) > 0:
 
         if len(task_list) < nprocs:
             nprocs = len(task_list)
 
         if nprocs > 1:
-
 
             with mp.Pool(nprocs, initializer=create_web_driver) as pool:
                 results_list = list(pool.starmap(run_task, task_list))
@@ -438,7 +468,7 @@ def generate_svg_paths(feature_prep_df, overwrite=False, upper_limit=False, npro
 
         else:
 
-            driver = create_web_driver()
+            create_web_driver()
 
             for unique_id, clean_link in task_list:
                 print(clean_link)
@@ -459,8 +489,7 @@ def generate_svg_paths(feature_prep_df, overwrite=False, upper_limit=False, npro
     return feature_prep_df
 
 
-
-def get_svg_path(url, fixed_driver=None, max_attempts=10):
+def get_svg_path(url, max_attempts=10):
     """Get SVG path data from leaflet map at specified url
 
     Only specifically tested using OpenStreetMap 'directions' results
@@ -475,8 +504,6 @@ def get_svg_path(url, fixed_driver=None, max_attempts=10):
     Returns:
         str: SVG path element data
     """
-    if fixed_driver is not None:
-        driver = fixed_driver
     driver.get(url)
     time.sleep(2)
     attempts = 0
@@ -494,31 +521,6 @@ def get_svg_path(url, fixed_driver=None, max_attempts=10):
     # driver.close()
     return d
 
-
-def create_web_driver():
-    # chromedriver_path = "./chromedriver"
-    # options = webdriver.ChromeOptions()
-    # options.binary_location = "./chrome-linux/chrome"
-    # options.headless = True
-    # driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
-
-    geckodriver_path = "./geckodriver"
-    options = webdriver.FirefoxOptions()
-    options.headless = True
-    profile = webdriver.FirefoxProfile()
-    profile.accept_untrusted_certs = True
-    options.binary_location = "./firefox/firefox-bin"
-
-    # import random
-    # if parallel:
-    #     sleep_val = random.randint(0, max_workers)
-    #     print(f"Sleeping for {sleep_val} seconds before starting...")
-    #     time.sleep(sleep_val)
-    global driver
-    driver = webdriver.Firefox(executable_path=geckodriver_path, options=options, firefox_profile=profile)
-
-    driver.set_window_size(1920*10, 1080*10)
-    return driver
 
 
 def get_soup(url, pretty_print=False, timeout=60):
@@ -785,36 +787,23 @@ def buffer_osm_feat(fn):
     return wrapper
 
 
-def handle_failure(task, old_state, new_state):
-    if isinstance(new_state, state.Failed):
-        return state.Success(result='unknown failure')
-    else:
-        return new_state
+# def handle_failure(task, old_state, new_state):
+#     if isinstance(new_state, state.Failed):
+#         return state.Success(result='unknown failure')
+#     else:
+#         return new_state
 
 
-@task
-def process(r, t, output_path):
-    combined = zip(r, t)
-    results = []
-    for rr, tt in combined:
-        if rr == 'unknown failure':
-            results.append((tt[0], None, 'unknown failure'))
-        else:
-            results.append(rr)
-
-    results_df = pd.DataFrame(results, columns=["unique_id", "feature", "flag"])
-    results_df.to_csv(output_path, index=False)
-
-
-@task(log_stdout=True, state_handlers=[handle_failure], task_run_name=lambda **kwargs: f"{kwargs['task'][1]}")
+# @task(log_stdout=True, state_handlers=[handle_failure], task_run_name=lambda **kwargs: f"{kwargs['task'][1]}")
+@task()
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
 def get_osm_feat(task):
     unique_id, clean_link, osm_type, osm_id, svg_path, api, version = task
 
     print(unique_id, osm_type)
-    logger = prefect.context.get("logger")
-    logger.info(clean_link)
+    # logger = prefect.context.get("logger")
+    # logger.info(clean_link)
 
     if osm_type == "directions":
         feat = get_directions_geom(clean_link, svg_path)
@@ -847,44 +836,24 @@ def get_osm_feat(task):
     return (unique_id, feat, None)
 
 
-@task(nout=2)
-# def process_results(task_results, valid_df, errors_df, merge_df):
-def process_results(task_results, merge_df):
-    # ---------
-    # column name for join field in original df
-    results_join_field_name = "unique_id"
-    # position of join field in each tuple in task list
-    # results_join_field_loc = 0
-    # ---------
+@task
+def process(r, t, output_path):
+    combined = zip(r, t)
+    results = []
+    for rr, tt in combined:
+        if rr == 'unknown failure':
+            results.append((tt[0], None, 'unknown failure'))
+        else:
+            results.append(rr)
 
-    # join function task_results back to df
-    # results_df = pd.DataFrame(task_results, columns=["status", "message", results_join_field_name, "result"])
-    results_df = pd.DataFrame(task_results, columns=["unique_id", "feature", "flag"])
-    # results_df[results_join_field_name] = results_df[results_join_field_name].apply(lambda x: x[results_join_field_loc])
-    # results_df['feature'] = results_df['result'].apply(lambda x: x[0])
-    # results_df['flag'] = results_df['result'].apply(lambda x: x[1])
-    # results_df.drop(["result"], axis=1, inplace=True)
-
-    output_df = merge_df.merge(results_df, on=results_join_field_name, how="left")
-
-    # set status to 1 for any items with feature == None and a non-none flag
-    # output_df.loc[output_df.feature.isnull() & output_df.flag.notnull(), "status"] = 2
-
-    # if valid_df is None:
-    # valid_df = output_df[output_df["status"] == 0].copy()
-    # else:
-    #     valid_df = pd.concat([valid_df, output_df.loc[output_df.status == 0]])
+    results_df = pd.DataFrame(results, columns=["unique_id", "feature", "flag"])
+    results_df.to_csv(output_path, index=False)
 
 
-    # errors_df = output_df[output_df["status"] > 0].copy()
-
-    valid_df = output_df[output_df.feature.notnull() & output_df.flag.isnull()].copy()
-    errors_df = output_df[output_df.feature.isnull() & output_df.flag.notnull()].copy()
-
-    print("\t{} errors found out of {} tasks".format(len(errors_df), len(output_df)))
-
-
-    return valid_df, errors_df
+def save_df(df, path):
+    """Save a dataframe to a csv file
+    """
+    df.to_csv(path, index=True)
 
 
 def prepare_multipolygons(valid_df):

@@ -17,9 +17,9 @@ from pathlib import Path
 import pandas as pd
 import shapely.wkt
 
-import prefect
-from prefect import task, Flow, unmapped, apply_map
-from prefect.executors import DaskExecutor, LocalExecutor, LocalDaskExecutor
+from prefect import flow, task
+from prefect.task_runners import SequentialTaskRunner, ConcurrentTaskRunner
+from prefect_dask.task_runners import DaskTaskRunner
 
 import utils
 
@@ -71,11 +71,11 @@ from_existing = use_existing_svg or use_existing_feature
 if from_existing:
     existing_timestamp = config[run_name]["existing_timestamp"]
 
-update_mode = config.getboolean(run_name, "update_mode")
-update_ids = None
-if update_mode:
-    update_ids = json.loads(config[run_name]["update_ids"])
-    update_timestamp = config[run_name]["update_timestamp"]
+# update_mode = config.getboolean(run_name, "update_mode")
+# update_ids = None
+# if update_mode:
+#     update_ids = json.loads(config[run_name]["update_ids"])
+#     update_timestamp = config[run_name]["update_timestamp"]
 
 
 
@@ -85,14 +85,14 @@ prefect_project_name = config["main"]["prefect_project_name"]
 dask_enabled = config.getboolean("main", "dask_enabled")
 dask_distributed = config.getboolean("main", "dask_distributed") if "dask_distributed" in config["main"] else False
 
-if dask_enabled:
-    if dask_distributed:
-        dask_address = config["main"]["dask_address"]
-        executor = DaskExecutor(address=dask_address)
-    else:
-        executor = LocalDaskExecutor(scheduler="processes")
-else:
-    executor = LocalExecutor()
+# if dask_enabled:
+#     if dask_distributed:
+#         dask_address = config["main"]["dask_address"]
+#         executor = DaskExecutor(address=dask_address)
+#     else:
+#         executor = LocalDaskExecutor(scheduler="processes")
+# else:
+#     executor = LocalExecutor()
 
 
 
@@ -135,12 +135,12 @@ if from_existing:
 # option to sample data for testing; sample size <=0 returns full dataset
 sampled_feature_prep_df = utils.sample_and_validate(link_df, sample_size=-1, summary=True)
 
-# BOTTLENECK #1
-# TODO: figure out how to parallelize this (multiple webdrivers seems to be causing issues)
 # TODO: deduplicate svg links before processing
-feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=True, upper_limit=None, nprocs=max_workers)
+# TODO: optimize webdriver (0.2gb per process w/ GUI vs 2.5gb headless) [70 tasks run in a bout 5 minutes with 10 processes / GUI]
+feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=False, upper_limit=None, nprocs=max_workers)
+importlib.reload(utils)
 
-utils.save_df.run(feature_prep_df, feature_prep_df_path)
+utils.save_df(feature_prep_df, feature_prep_df_path)
 
 if prepare_only:
     sys.exit("Completed preparing feature_prep_df.csv, and exiting as `prepare_only` option was set.")
@@ -176,16 +176,21 @@ task_df = feature_prep_df.loc[feature_prep_df.feature.isnull() & feature_prep_df
 task_list = generate_task_list(task_df, api)
 
 
-# BOTTLENECK #2
-# TODO: optimize parallelization
+# BOTTLENECK
+# TODO: optimize parallelization [~1500 mixed type tasks about 45 minutes to run w/ 10 workers]
+
+
 
 # prefect
-with Flow("osm-features") as flow:
-    task_results = utils.get_osm_feat.map(task_list[:2])
+
+@flow
+def osm_features_flow():
+    task_results = utils.get_osm_feat.map(task_list[:5])
     utils.process(task_results, task_list, task_results_path)
 
 
-state = utils.run_flow(flow, executor, prefect_cloud_enabled, prefect_project_name)
+osm_features_flow()
+# state = utils.run_flow(flow, executor, prefect_cloud_enabled, prefect_project_name)
 
 results_df = pd.read_csv(task_results_path)
 
