@@ -1,5 +1,32 @@
 #!/bin/bash
 
+# ==========================================================================
+# ==========================================================================
+# prefect 2.0
+
+# prefect setup
+pip install -U "prefect==2.3.0"
+pip install prefect-dask
+
+# terminal 1
+prefect orion start
+
+# terminal 2
+prefect agent start -q "china-osm-queue"
+
+# terminal 3
+dask-scheduler
+
+# terminal 4
+# dask-worker tcp://127.0.0.1:8786 --nprocs 4 --memory-limit 4GB
+dask-worker tcp://127.0.0.1:8786 --nprocs 10
+
+
+
+# ==========================================================================
+# ==========================================================================
+# prefect 1.0
+
 # python environment used for prefect agent/server
 # must have prefect and docker-compose packages installed
 
