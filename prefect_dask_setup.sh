@@ -5,8 +5,7 @@
 # prefect 2.0
 
 # prefect setup
-pip install -U "prefect==2.3.0"
-pip install prefect-dask
+pip install prefect==2.2.0 prefect-dask bokeh>=2.1.1
 
 # terminal 1
 prefect orion start
