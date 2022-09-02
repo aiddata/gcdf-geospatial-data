@@ -95,24 +95,21 @@ cd china-osm-geodata
 
 For the easiest setup, we strongly suggest using Anaconda and following the steps below. If you do not already have Anaconda installed, please see their [installation guides](https://docs.anaconda.com/anaconda/install/index.html).
 
-When using Conda, you will typically want to unset the `PYTHONPATH` variable, e.g. `unsetenv PYTHONPATH` when using tcsh or `unset PYTHONPATH` for bash
+
 
 ```
 conda create -n china_osm python=3.8
 conda activate china_osm
-conda install -c conda-forge bs4 shapely pandas geopandas selenium==3.141.0 openpyxl prefect
+conda install -c conda-forge bs4 shapely pandas geopandas selenium==3.141.0 openpyxl
 pip install osm2geojson==0.1.29 overpass
-# Only required if using mpi4py for parallel processing (e.g., on W&M's HPC)
-pip install mpi4py
+pip install prefect==2.2.0 prefect-dask bokeh>=2.1.1
 ```
 
 Notes:
 - The `environment.yml` file is available with specific versions of packages installed by Conda if needed (specific Selenium version specified above).
     - Use `conda env create -f environment.yml` to builds from this file.
     - You will still need to install packages using pip after creating the environment.
-- pip was needed to install osm2geojson in order to get newer version (may be available through latest conda, but not tested in our build)
-- If parallel processing, pip is needed to install mpi4py based on system build of mpi (e.g., OpenMPI)
-    - Warning: if you do not use parallel processing this can take a significant amount of time to run for the full dataset.
+- pip was needed to install osm2geojson and prefect in order to get newer versions (may be available through latest conda, but not tested in our build)
 
 Add the path to where you cloned the repo to your Conda environment:
 `conda develop /path/to/china-osm-geodata`
@@ -144,16 +141,34 @@ Notes:
 
 3. Adjust variables
 
-- Edit the `config.ini` file to modify variables as needed
-    - `parallel`: set to `true` or `false` depending on how you intend to run the processing
+- Edit the `[main]` section of the  `config.ini` file to modify variables as needed:
+    - `base_directory`: path to your working directory (`/path/to/china-osm-geodata`)
+    - `active_run_name`: defines which run-specific section of the config.ini file to use.
+    - `github_name`: GitHub owner of repo to push output data to
+    - `github_repo`: name of GitHub repo to push output data to
+    - `github_branch`: branch of GitHub repo to push output data to
     - `max_workers`: the maximum number of workers to use for parallel processing
-    - `release_name`: a unique name that matches the directory within `./input_data` where input data is located, and is also used to create a corresponding directory in `./output_data` for outputs from processing.
-    - `from_existing`: Primarily used for debugging/testing with new data. Boolean value indicating whether preliminary data from a previous run should be used to instantiate the current run. You should not need to adjust the `release_name` if just replicating the official processed data
-    - `from_existing_timestamp`: When `from_existing` is set to `True`, this is the timestamp used to create the directory of the output data (e.g., `./output_data/<release_name>/results/<timestamp>`) that will be used to instantiate the current run
-    - `prepare_only`: Boolean value indicating whether only the preliminary stage of data preparation will be run. See details in section below for use cases.
-    - `id_field`, `location_field`, and `osm_str`: These are static variables that should not be changed for replication, yet are made available to support adapting this code for additional datasets in the future. `id_field` is a unique ID field in the input data, `location_field` is the field containing OSM links, and `osm_str` is the string used to identify OSM links.
-    - `update_mode` (bool) can be used run a limited build for updating specific projects. `update_ids` is a list of project IDs to update, and  `update_timestamp` is a previous build's timestamp which the updates will be part of. For example, with update_mode = True, update_ids = [123], and update_timestamp = 2021_10_31_23_59, the build will utilize the input data (which has been updated to reflect any changes), and will process only project ID 123. Once project 123 is processed, all other projects from the build with timestamp 2020_10_31_23_59 will be copied into the updated build.
+    - `dask_enabled`: whether to use Dask for processing data
+    - `dask_distributed`: whether to use a specific Dask cluster (if false, creates a local Dask cluster)
+    - `dask_address`: the address of the Dask cluster to use if `dask_distributed` is True
+    - `non_dask_serial`: if not using Dask, whether to run tasks in Serial (may help when testing) or Concurrently when possible
 
+- Edit the run-specific section of the  `config.ini` file to modify variables as needed. You may have many run-specific section for different datasets or processing purposes, but the active one must be defined in the `active_run_name` field of the `[main]` config section.
+
+    - `release_name`: a unique name that matches the directory within `./input_data` where input data is located, and is also used to create a corresponding directory in `./output_data` for outputs from processing.
+    - `sample_size` (bool): Number of samples of each OSM type (node, way, relation, directions) to be used for testing. To use all data, set to `-1`.
+    - `use_existing_svg` (bool): Whether to use already processed information on OSM "directions" links from a previous run
+   - `use_existing_feature` (bool): Whether to use already processed OSM features from a previous run
+    - `from_existing_timestamp`: When either `use_existing_svg` or `use_existing_feature` is set to `True`, this is the timestamp of an existing run from which already processed data will be pulled
+    - `prepare_only`: Boolean value indicating whether only the preliminary stage of data preparation will be run. See details in section below for use cases.
+    - `id_field`, `location_field`, `precision_field`, and `osm_str`: These are static variables that should not be changed for replication, yet are made available to support adapting this code for additional datasets in the future. `id_field` is a unique ID field in the input data, `location_field` is the field containing OSM links, `precision_field` described the precision level of the OSM feature relative to the true project feature, and `osm_str` is the string used to identify OSM links.
+    - `output_project_fields` (list): the columns from the input data to be included in the output GeoJSONs as feature properties
+
+
+### Setup Prefect UI and Dask cluster (optional)
+
+1. See `prefect_dask_setup.sh`
+    - **To be updated**
 
 ### Run Code
 
@@ -161,9 +176,4 @@ Notes:
     - Locally:
         - `python tuff_osm.py`
     - On W&M's HPC:
-        - Edit `jobscript` to set the source directory for files on the HPC
-        - `qsub jobscript`
-
-2. (Optional) The portion of the script which extracts information from OSM links which are driving directions is the slowest portion as it much be run in serial (for now). As a result, if you intend to use parallel processing in general you may wish to run this portion separately first, then run the remaining code in parallel.
-    - To support this, you may set the `prepare_only` config option to `True` and the script will exit after the initial data preparation stage which includes acquiring data on OSM driving directions.
-    - After using the `prepare_only = True` and `parallel = false` to run the script, you may set `prepare_only = False` and `parallel = true` and use the accompanying `from_existing` options described above to run the second stage of processing.
+        - **To be updated**
