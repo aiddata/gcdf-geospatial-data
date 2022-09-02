@@ -845,6 +845,7 @@ def process(r, t, output_path):
 
     results_df = pd.DataFrame(results, columns=["unique_id", "feature", "flag"])
     results_df.to_csv(output_path, index=False)
+    return results_df
 
 
 def save_df(df, path):

@@ -187,16 +187,18 @@ task_list = generate_task_list(task_df, api)
 
 # prefect
 @flow(task_runner=ActiveTaskRunner)
-def osm_features_flow4():
+def osm_features_flow():
+    task_results = []
     task_futures = utils.get_osm_feat.map(task_list[:5])
     for future in task_futures:
-        future.wait()
-    # utils.process(task_results, task_list, task_results_path)
+        task_results.append(future.result())
+        # future.wait()
+    results_df = utils.process(task_futures, task_list, task_results_path)
+    return results_df
 
 
-osm_features_flow4()
+results_df = osm_features_flow()
 
-results_df = pd.read_csv(task_results_path)
 
 
 # ==========================================================
