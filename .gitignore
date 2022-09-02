@@ -21,3 +21,6 @@ examples/generate_buffers/*.geojson
 examples/rasterize/rasters
 latest/*.geojson
 *.tif.aux.xml
+prefect2_dask_test.py
+2018_tests.py
+dask-worker-space/
