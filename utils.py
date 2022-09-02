@@ -128,7 +128,7 @@ def load_simple_input_data(base_dir, release_name, output_project_fields, id_fie
     all_df["finance_type"] = "all"
 
     input_df = all_df[output_project_fields].copy(deep=True)
-    input_df['id'] = all_df[id_field]
+    input_df['id'] = all_df[id_field].astype(int)
     input_df['location'] = all_df[location_field]
     if version_field:
         input_df['version'] = all_df[version_field]
@@ -395,8 +395,8 @@ def create_web_driver():
 
     geckodriver_path = "./geckodriver"
     options = webdriver.FirefoxOptions()
-    options.headless = False
-    # options.headless = True
+    # options.headless = False
+    options.headless = True
 
     options.add_argument("--disable-extensions")
     options.add_argument('--no-sandbox')
@@ -423,7 +423,7 @@ def create_web_driver():
     global driver
     driver = webdriver.Firefox(executable_path=geckodriver_path, options=options, firefox_profile=profile)
 
-    driver.set_window_size(1920*10, 1080*10)
+    driver.set_window_size(1920*2, 1080*2)
     # return driver
 
 
@@ -502,7 +502,7 @@ def get_svg_path(url, max_attempts=10):
         str: SVG path element data
     """
     driver.get(url)
-    time.sleep(2)
+    time.sleep(3)
     attempts = 0
     d = None
     while not d:
@@ -510,6 +510,8 @@ def get_svg_path(url, max_attempts=10):
         soup = BS(driver.page_source, "html.parser")
         try:
             d = soup.find("path", {"class": "leaflet-interactive"})["d"]
+            if d == "M0 0":
+                raise Exception("Failed to load SVG")
         except:
             if attempts >= max_attempts:
                 raise Exception("max_attempts exceeded waiting for page to load")

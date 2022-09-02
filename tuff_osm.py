@@ -43,8 +43,6 @@ github_name = config["main"]["github_name"]
 github_repo = config["main"]["github_repo"]
 github_branch = config["main"]["github_branch"]
 
-
-
 release_name = config[run_name]["release_name"]
 
 sample_size = int(config[run_name]["sample_size"])
@@ -76,9 +74,6 @@ if from_existing:
 #     update_ids = json.loads(config[run_name]["update_ids"])
 #     update_timestamp = config[run_name]["update_timestamp"]
 
-
-prefect_cloud_enabled = config.getboolean("main", "prefect_cloud_enabled")
-prefect_project_name = config["main"]["prefect_project_name"]
 
 dask_enabled = config.getboolean("main", "dask_enabled")
 dask_distributed = config.getboolean("main", "dask_distributed") if "dask_distributed" in config["main"] else False
@@ -144,7 +139,7 @@ sampled_feature_prep_df = utils.sample_and_validate(link_df, sample_size=-1, sum
 
 # TODO: deduplicate svg links before processing
 # TODO: optimize webdriver (0.2gb per process w/ GUI vs 2.5gb headless) [70 tasks run in a bout 5 minutes with 10 processes / GUI]
-feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=False, upper_limit=None, nprocs=max_workers)
+feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=True, upper_limit=None, nprocs=max_workers)
 
 utils.save_df(feature_prep_df, feature_prep_df_path)
 
@@ -189,10 +184,9 @@ task_list = generate_task_list(task_df, api)
 @flow(task_runner=ActiveTaskRunner)
 def osm_features_flow():
     task_results = []
-    task_futures = utils.get_osm_feat.map(task_list[:5])
+    task_futures = utils.get_osm_feat.map(task_list[:10])
     for future in task_futures:
         task_results.append(future.result())
-        # future.wait()
     results_df = utils.process(task_futures, task_list, task_results_path)
     return results_df
 

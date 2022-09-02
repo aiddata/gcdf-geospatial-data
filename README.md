@@ -118,14 +118,15 @@ Add the path to where you cloned the repo to your Conda environment:
 2. Install FireFox binary and geckodriver locally.
 
 ```
-wget https://ftp.mozilla.org/pub/firefox/releases/90.0.2/linux-x86_64/en-US/firefox-90.0.2.tar.bz2
-tar -xvf firefox-90.0.2.tar.bz2
+wget https://ftp.mozilla.org/pub/firefox/releases/104.0/linux-x86_64/en-US/firefox-104.0.tar.bz2
+tar -xvf firefox-104.0.tar.bz2
 
-wget https://github.com/mozilla/geckodriver/releases/download/v0.29.1/geckodriver-v0.29.1-linux64.tar.gz
-tar -xvf geckodriver-v0.29.1-linux64.tar.gz
+wget https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz
+tar -xvf geckodriver-v0.31.0-linux64.tar.gz
+
 ```
 Notes:
-- Varying builds of FireFox and Geckodriver may perform differently or have issues. This build has only been tested with Firefox 90.0.2 and Geckodriver 0.29.1.
+- Varying builds of FireFox and Geckodriver may perform differently or have issues. This has only been run on Linux and was originally tested with Firefox 90.0.2 and Geckodriver 0.29.1, and has since been updated to Firefox 104.0 and Geckdriver 0.31.0.
 - If you are running on a local machine with FireFox (or Chrome) already installed, you may opt to use that instead of downloading and installing a new copy. This will require modifying the code and as noted above, other versions have not been tested.
 
 
