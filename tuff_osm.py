@@ -17,7 +17,7 @@ from pathlib import Path
 import pandas as pd
 import shapely.wkt
 
-from prefect import flow, task
+from prefect import flow
 from prefect.task_runners import SequentialTaskRunner, ConcurrentTaskRunner
 from prefect_dask.task_runners import DaskTaskRunner
 
@@ -43,10 +43,9 @@ github_name = config["main"]["github_name"]
 github_repo = config["main"]["github_repo"]
 github_branch = config["main"]["github_branch"]
 
-release_name = config[run_name]["release_name"]
 
-parallel = config.getboolean(run_name, "parallel")
-max_workers = int(config[run_name]["max_workers"])
+
+release_name = config[run_name]["release_name"]
 
 sample_size = int(config[run_name]["sample_size"])
 
@@ -78,22 +77,30 @@ if from_existing:
 #     update_timestamp = config[run_name]["update_timestamp"]
 
 
-
 prefect_cloud_enabled = config.getboolean("main", "prefect_cloud_enabled")
 prefect_project_name = config["main"]["prefect_project_name"]
 
 dask_enabled = config.getboolean("main", "dask_enabled")
 dask_distributed = config.getboolean("main", "dask_distributed") if "dask_distributed" in config["main"] else False
 
-# if dask_enabled:
-#     if dask_distributed:
-#         dask_address = config["main"]["dask_address"]
-#         executor = DaskExecutor(address=dask_address)
-#     else:
-#         executor = LocalDaskExecutor(scheduler="processes")
-# else:
-#     executor = LocalExecutor()
+non_dask_serial = config.getboolean("main", "non_dask_serial")
 
+max_workers = int(config["main"]["max_workers"])
+
+
+if dask_enabled:
+    if dask_distributed:
+        dask_address = config["main"]["dask_address"]
+        ActiveTaskRunner = DaskTaskRunner(address=dask_address)
+
+    else:
+        ActiveTaskRunner = DaskTaskRunner()
+
+else:
+    if non_dask_serial:
+        ActiveTaskRunner = SequentialTaskRunner()
+    else:
+        ActiveTaskRunner = ConcurrentTaskRunner()
 
 
 # ==========================================================
@@ -138,7 +145,6 @@ sampled_feature_prep_df = utils.sample_and_validate(link_df, sample_size=-1, sum
 # TODO: deduplicate svg links before processing
 # TODO: optimize webdriver (0.2gb per process w/ GUI vs 2.5gb headless) [70 tasks run in a bout 5 minutes with 10 processes / GUI]
 feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=False, upper_limit=None, nprocs=max_workers)
-importlib.reload(utils)
 
 utils.save_df(feature_prep_df, feature_prep_df_path)
 
@@ -179,28 +185,18 @@ task_list = generate_task_list(task_df, api)
 # BOTTLENECK
 # TODO: optimize parallelization [~1500 mixed type tasks about 45 minutes to run w/ 10 workers]
 
-
-
 # prefect
+@flow(task_runner=ActiveTaskRunner)
+def osm_features_flow4():
+    task_futures = utils.get_osm_feat.map(task_list[:5])
+    for future in task_futures:
+        future.wait()
+    # utils.process(task_results, task_list, task_results_path)
 
-@flow
-def osm_features_flow():
-    task_results = utils.get_osm_feat.map(task_list[:5])
-    utils.process(task_results, task_list, task_results_path)
 
-
-osm_features_flow()
-# state = utils.run_flow(flow, executor, prefect_cloud_enabled, prefect_project_name)
+osm_features_flow4()
 
 results_df = pd.read_csv(task_results_path)
-
-
-# # standard
-# task_results = []
-# for task in task_list:
-#     task_results.append( utils.get_osm_feat.run(*task) )
-#
-# results_df = pd.DataFrame(task_results, columns=["unique_id", "feature", "flag"])
 
 
 # ==========================================================
@@ -217,8 +213,8 @@ errors_df = output_df[output_df.feature.isnull() & output_df.flag.notnull()].cop
 
 print("\t{} errors found out of {} tasks ({} were not procesed)".format(len(errors_df), len(output_df), len(unprocessed_df)))
 
-utils.save_df.run(valid_df, processing_valid_path)
-utils.save_df.run(errors_df, processing_errors_path)
+utils.save_df(valid_df, processing_valid_path)
+utils.save_df(errors_df, processing_errors_path)
 
 
 

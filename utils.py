@@ -20,10 +20,7 @@ from overpass.errors import TimeoutError, ServerLoadError, MultipleRequestsError
 import osm2geojson
 from selenium import webdriver
 
-import prefect
 from prefect import task
-# from prefect import Client, task
-# from prefect.engine import state
 
 
 # def run_flow(flow, executor, prefect_cloud_enabled, project_name):
@@ -795,7 +792,7 @@ def buffer_osm_feat(fn):
 
 
 # @task(log_stdout=True, state_handlers=[handle_failure], task_run_name=lambda **kwargs: f"{kwargs['task'][1]}")
-@task()
+@task(retries=5, retry_delay_seconds=60)
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
 def get_osm_feat(task):
@@ -836,7 +833,7 @@ def get_osm_feat(task):
     return (unique_id, feat, None)
 
 
-@task
+@task(retries=5, retry_delay_seconds=5)
 def process(r, t, output_path):
     combined = zip(r, t)
     results = []
