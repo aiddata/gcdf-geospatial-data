@@ -14,7 +14,6 @@ import configparser
 import itertools
 from pathlib import Path
 
-import pandas as pd
 import shapely.wkt
 
 from prefect import flow
@@ -180,25 +179,43 @@ def generate_task_list(df, api):
 
 # only generate tasks for rows that have not been processed yet (checking field from potential existing data)
 task_df = feature_prep_df.loc[feature_prep_df.feature.isnull() & feature_prep_df.flag.isnull()].copy()
-task_list = generate_task_list(task_df, api)
+
+# subset for testing if needed
+active_task_df = task_df.iloc[:].copy()
+
+task_list = generate_task_list(active_task_df, api)
+
+# reduce task list to avoid running duplicate tasks
+unique_links = []
+unique_task_list = []
+for i in task_list:
+    if i[1] not in unique_links:
+        unique_links.append(i[1])
+        unique_task_list.append(i)
 
 
 # BOTTLENECK
 # TODO: optimize parallelization [~1500 mixed type tasks about 45 minutes to run w/ 10 workers]
-# TODO: avoid running duplicate tasks
 
 # prefect
 @flow(task_runner=ActiveTaskRunner)
-def osm_features_flow():
+def osm_features_flow2(flow_task_list):
     task_results = []
-    task_futures = utils.get_osm_feat.map(task_list[:10])
+    task_futures = utils.get_osm_feat.map(flow_task_list)
     for future in task_futures:
         task_results.append(future.result())
     results_df = utils.process(task_futures, task_list, task_results_path)
     return results_df
 
 
-results_df = osm_features_flow()
+
+results_df = osm_features_flow2(unique_task_list)
+
+# rebuild original task list to populate results for duplicate tasks
+results_df = results_df.merge(active_task_df[['unique_id', 'clean_link']], on='unique_id', how='left')
+results_df.drop(columns=['unique_id'], inplace=True)
+results_df = active_task_df[['unique_id', 'clean_link']].merge(results_df, on='clean_link', how='left')
+results_df.drop(columns=['clean_link'], inplace=True)
 
 
 
@@ -209,6 +226,7 @@ output_df = feature_prep_df.merge(results_df, on="unique_id", how="left")
 output_df['feature'] = output_df['feature_x'].where(output_df['feature_x'].notnull(), output_df['feature_y'])
 output_df['flag'] = output_df['flag_x'].where(output_df['flag_x'].notnull(), output_df['flag_y'])
 output_df.drop(columns=['feature_x', 'feature_y', 'flag_x', 'flag_y'], inplace=True)
+
 
 valid_df = output_df[output_df.feature.notnull() & output_df.flag.isnull()].copy()
 unprocessed_df = output_df[output_df.feature.isnull() & output_df.flag.isnull()].copy()
