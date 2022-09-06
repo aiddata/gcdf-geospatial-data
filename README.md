@@ -115,19 +115,31 @@ Add the path to where you cloned the repo to your Conda environment:
 `conda develop /path/to/china-osm-geodata`
 
 
-2. Install FireFox binary and geckodriver locally.
+2. Install Firefox binary and geckodriver locally.
 
+**On Linux:**
 ```
 wget https://ftp.mozilla.org/pub/firefox/releases/104.0/linux-x86_64/en-US/firefox-104.0.tar.bz2
 tar -xvf firefox-104.0.tar.bz2
 
 wget https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz
 tar -xvf geckodriver-v0.31.0-linux64.tar.gz
-
 ```
+
+**On MacOS:**
+
+Please note that you may need to download a [different build of geckodriver](https://github.com/mozilla/geckodriver/releases/) if you use an ARM Mac.
+```
+curl https://ftp.mozilla.org/pub/firefox/releases/104.0/mac/en-US/Firefox%20104.0.dmg -o Firefox-104.0.dmg
+# Install Firefox from the downloaded .dmg
+
+curl https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-macos.tar.gz -o geckodriver-v0.31.0-macos.tar.gz
+tar -xvf geckodriver-v0.31.0-macos.tar.gz
+```
+
 Notes:
-- Varying builds of FireFox and Geckodriver may perform differently or have issues. This has only been run on Linux and was originally tested with Firefox 90.0.2 and Geckodriver 0.29.1, and has since been updated to Firefox 104.0 and Geckdriver 0.31.0.
-- If you are running on a local machine with FireFox (or Chrome) already installed, you may opt to use that instead of downloading and installing a new copy. This will require modifying the code and as noted above, other versions have not been tested.
+- Varying builds of Firefox and Geckodriver may perform differently or have issues. This has only been run on Linux and was originally tested with Firefox 90.0.2 and Geckodriver 0.29.1, and has since been updated to Firefox 104.0 and Geckdriver 0.31.0.
+- If you are running on a local machine with Firefox (or Chrome) already installed, you may opt to use that instead of downloading and installing a new copy. This will require modifying the code and as noted above, other versions have not been tested.
 
 
 You also have the option to install chromedriver with your own system install of Chrome
