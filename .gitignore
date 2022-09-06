@@ -11,16 +11,11 @@ input_data/*
 output_data/*/*/*/*
 !output_data/**/*.csv
 output_data/**/*gdf*.csv
-tests.py
-test.py
-test.csv
-directions_parser.py
 examples/ntl_demo/viirs_ntl
 examples/ntl_demo/viirs_ntl_monthly
 examples/generate_buffers/*.geojson
 examples/rasterize/rasters
 latest/*.geojson
 *.tif.aux.xml
-prefect2_dask_test.py
-2018_tests.py
 dask-worker-space/
+archive/
