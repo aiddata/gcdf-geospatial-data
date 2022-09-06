@@ -199,7 +199,7 @@ for i in task_list:
 
 # prefect
 @flow(task_runner=ActiveTaskRunner)
-def osm_features_flow2(flow_task_list):
+def osm_features_flow(flow_task_list):
     task_results = []
     task_futures = utils.get_osm_feat.map(flow_task_list)
     for future in task_futures:
@@ -209,7 +209,7 @@ def osm_features_flow2(flow_task_list):
 
 
 
-results_df = osm_features_flow2(unique_task_list)
+results_df = osm_features_flow(unique_task_list)
 
 # rebuild original task list to populate results for duplicate tasks
 results_df = results_df.merge(active_task_df[['unique_id', 'clean_link']], on='unique_id', how='left')
