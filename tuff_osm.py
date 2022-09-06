@@ -145,7 +145,6 @@ if from_existing:
 sampled_feature_prep_df = utils.sample_and_validate(link_df, sample_size=-1, summary=True)
 
 # TODO: deduplicate svg links before processing
-# TODO: optimize webdriver (0.2gb per process w/ GUI vs 2.5gb headless) [70 tasks run in a bout 5 minutes with 10 processes / GUI]
 feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=True, upper_limit=None, nprocs=max_workers)
 
 utils.save_df(feature_prep_df, feature_prep_df_path)
@@ -186,6 +185,7 @@ task_list = generate_task_list(task_df, api)
 
 # BOTTLENECK
 # TODO: optimize parallelization [~1500 mixed type tasks about 45 minutes to run w/ 10 workers]
+# TODO: avoid running duplicate tasks
 
 # prefect
 @flow(task_runner=ActiveTaskRunner)

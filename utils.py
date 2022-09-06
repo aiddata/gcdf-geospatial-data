@@ -423,7 +423,10 @@ def create_web_driver():
     global driver
     driver = webdriver.Firefox(executable_path=geckodriver_path, options=options, firefox_profile=profile)
 
-    driver.set_window_size(1920*2, 1080*2)
+    # requires about 0.25GB of RAM multiplied by `scale`` for each worker user
+    #   e.g.: scale = 2 with 10 workers would require approximately 5GB of RAM
+    scale = 2
+    driver.set_window_size(1920*scale, 1080*scale)
     # return driver
 
 
