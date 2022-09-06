@@ -31,8 +31,8 @@ if not os.path.exists('config.ini'):
 config.read('config.ini')
 
 # confirm config file is for this project
-if 'china-data' not in config['main']:
-    raise Exception('Config does not seem to be for osm-china-data')
+if 'china-osm-geodata' not in config['main']:
+    raise Exception('Config.ini does not seem to be for china-osm-geodata')
 
 # make sure we are in the correct directory
 base_dir = config["main"]["base_directory"]
