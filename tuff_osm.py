@@ -21,22 +21,29 @@ from prefect import flow
 from prefect.task_runners import SequentialTaskRunner, ConcurrentTaskRunner
 from prefect_dask.task_runners import DaskTaskRunner
 
-import utils
 
-import importlib
-importlib.reload(utils)
-
-
-# ensure correct working directory when running as a batch parallel job
-# in all other cases user should already be in project directory
-if not hasattr(sys, 'ps1'):
-    os.chdir(os.path.dirname(__file__))
-
-# read config file
 config = configparser.ConfigParser()
+
+# make sure config file exists
+if not os.path.exists('config.ini'):
+    raise Exception('No config.ini file found')
+
 config.read('config.ini')
 
+# confirm config file is for this project
+if 'china-data' not in config['main']:
+    raise Exception('Config does not seem to be for osm-china-data')
+
+# make sure we are in the correct directory
 base_dir = config["main"]["base_directory"]
+os.chdir(base_dir)
+
+import utils
+
+# import importlib
+# importlib.reload(utils)
+
+
 run_name = config["main"]["active_run_name"]
 
 github_name = config["main"]["github_name"]
