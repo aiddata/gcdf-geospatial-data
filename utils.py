@@ -364,12 +364,18 @@ def osm_type_summary(df):
 
     print(summary_str)
 
+def sample_series(series, sample_size):
+    if len(series) > sample_size:
+        return series.sample(n=sample_size)
+    else:
+        return series
 
 def sample_and_validate(df, sample_size, summary=True):
     """sample features from each osm link type
     """
 
     if summary:
+        print('Full Dataset')
         osm_type_summary(df)
 
     valid_df = df.loc[df.valid].copy()
@@ -377,7 +383,8 @@ def sample_and_validate(df, sample_size, summary=True):
     if sample_size <= 0:
         sample_df = valid_df.copy(deep=True)
     else:
-        sample_df = valid_df.groupby('osm_type').apply(lambda x: x.sample(n=sample_size)).reset_index(drop=True)
+        sample_df = valid_df.groupby('osm_type').apply(lambda x: sample_series(x, sample_size)).reset_index(drop=True)
+
     sample_df['index'] = sample_df['unique_id']
     sample_df.set_index('index', inplace=True)
 
@@ -387,6 +394,10 @@ def sample_and_validate(df, sample_size, summary=True):
         sample_df['feature'] = None
     if 'flag' not in sample_df.columns:
         sample_df['flag'] = None
+
+    if summary and len(sample_df) != len(df):
+        print('Sampled Dataset')
+        osm_type_summary(sample_df)
 
     return sample_df
 

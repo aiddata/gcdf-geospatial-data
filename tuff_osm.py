@@ -143,15 +143,17 @@ if from_existing:
 
 
 # option to sample data for testing; sample size <=0 returns full dataset
-sampled_feature_prep_df = utils.sample_and_validate(link_df, sample_size=-1, summary=True)
+sampled_feature_prep_df = utils.sample_and_validate(link_df, sample_size=sample_size, summary=True)
 
 # TODO: deduplicate svg links before processing
-feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=True, upper_limit=None, nprocs=max_workers)
+svg_overwrite = not use_existing_svg
+feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=svg_overwrite, upper_limit=None, nprocs=max_workers)
 
 utils.save_df(feature_prep_df, feature_prep_df_path)
 
 if prepare_only:
-    sys.exit("Completed preparing feature_prep_df.csv, and exiting as `prepare_only` option was set.")
+    print(f'Dataset prep complete: {timestamp}')
+    sys.exit("Exiting as `prepare_only` option was set.")
 
 
 
