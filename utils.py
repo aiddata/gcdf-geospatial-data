@@ -109,7 +109,7 @@ def load_input_data(base_dir, release_name, output_project_fields, id_field, loc
     return input_df
 
 
-def load_simple_input_data(base_dir, release_name, output_project_fields, id_field, location_field, precision_field=None, version_field=None):
+def load_simple_input_data(base_dir, release_name, csv_name, output_project_fields, id_field, location_field, precision_field=None, version_field=None):
     """Loads input datasets from various Excel sheets
 
     Makes column names uniform
@@ -119,7 +119,7 @@ def load_simple_input_data(base_dir, release_name, output_project_fields, id_fie
         pandas.DataFrame: combined input dataframe
     """
     # read in separate datasets
-    all_df = pd.read_csv(base_dir / "input_data" / release_name / "OSM2018sorted.csv")
+    all_df = pd.read_csv(base_dir / "input_data" / release_name / csv_name)
 
     all_df.dropna(axis=0, how='all', inplace=True)
     all_df.dropna(axis=1, how='all', inplace=True)

@@ -50,6 +50,7 @@ github_repo = config["main"]["github_repo"]
 github_branch = config["main"]["github_branch"]
 
 release_name = config[run_name]["release_name"]
+csv_name = config[run_name]["csv_name"]
 
 sample_size = int(config[run_name]["sample_size"])
 
@@ -126,7 +127,7 @@ processing_errors_path = output_dir / "processing_errors.csv"
 api = utils.init_overpass_api()
 
 # input_data_df = utils.load_input_data(base_dir, release_name, output_project_fields, id_field, location_field)
-input_data_df = utils.load_simple_input_data(base_dir, release_name, output_project_fields, id_field, location_field, precision_field)
+input_data_df = utils.load_simple_input_data(base_dir, release_name, csv_name, output_project_fields, id_field, location_field, precision_field)
 
 base_df = input_data_df[['id', 'location', 'version', 'precision']].copy()
 
