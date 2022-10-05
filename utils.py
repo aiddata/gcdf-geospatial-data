@@ -178,13 +178,19 @@ def create_unique_osm_id(row):
     return uid
 
 
-def load_existing(existing_dir, link_df, use_existing_feature):
+def load_existing(existing_dir, link_df, use_existing_feature, use_only_existing):
 
     df = link_df.copy()
     existing_feature_prep_path = existing_dir / "feature_prep.csv"
     existing_processing_valid_path = existing_dir / "processing_valid.csv"
 
-    if existing_feature_prep_path.exists():
+    if use_only_existing:
+        if use_existing_feature and existing_processing_valid_path.exists():
+            df = pd.read_csv(existing_processing_valid_path)
+        elif existing_feature_prep_path.exists():
+            df = pd.read_csv(existing_feature_prep_path)
+
+    elif existing_feature_prep_path.exists():
         # join svg_path col to current run
         existing_feature_prep_df = pd.read_csv(existing_feature_prep_path)
         svg_df = existing_feature_prep_df[['clean_link', 'svg_path']].loc[existing_feature_prep_df.svg_path.notnull()].copy()

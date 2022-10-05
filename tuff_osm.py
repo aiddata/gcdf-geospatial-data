@@ -70,6 +70,7 @@ prepare_only = config.getboolean(run_name, "prepare_only")
 use_existing_svg  = config.getboolean(run_name, "use_existing_svg")
 use_existing_feature  = config.getboolean(run_name, "use_existing_feature")
 from_existing = use_existing_svg or use_existing_feature
+use_only_existing  = config.getboolean(run_name, "use_only_existing")
 
 if from_existing:
     existing_timestamp = config[run_name]["existing_timestamp"]
@@ -137,7 +138,7 @@ if from_existing:
     existing_dir = output_dir.parent / existing_timestamp
 
     # TODO: determine if we actually want to use update_mode and update/integrate into function if we do
-    link_df = utils.load_existing(existing_dir, link_df, use_existing_feature)
+    link_df = utils.load_existing(existing_dir, link_df, use_existing_feature, use_only_existing)
 
 
 # option to sample data for testing; sample size <=0 returns full dataset
