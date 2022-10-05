@@ -195,13 +195,14 @@ Potential issues:
 
 ### Setup Prefect UI and Dask cluster (optional)
 
-1. See `prefect_dask_setup.sh`
-    - **To be updated**
+1. Review `prefect_dask_setup.sh` and adjust if needed (most will not need to)
+    - Make sure you are currently in your `china-osm-geodata` directory in a terminal
+    - Run `bash prefect_dask_setup.sh`
+    - Notes:
+        - If you run into issues when running with Prefect along the lines of `alembic.util.exc.CommandError: Can't locate revision identified by 'e757138e954a'` then you likely need to clear out your existing prefect database and data in `/path/to/china-osm-geodata/.prefect/orion.db`. This is often the result of using different versionf of Prefect on your system.
 
 ### Run Code
 
 1. Run the Python script
-    - Locally:
-        - `python tuff_osm.py`
-    - On W&M's HPC:
-        - **To be updated**
+    - `python tuff_osm.py`
+
