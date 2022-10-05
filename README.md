@@ -183,8 +183,9 @@ Potential issues:
     - `release_name`: a unique name that matches the directory within `./input_data` where input data is located, and is also used to create a corresponding directory in `./output_data` for outputs from processing.
     - `sample_size` (bool): Number of samples of each OSM type (node, way, relation, directions) to be used for testing. To use all data, set to `-1`.
     - `use_existing_svg` (bool): Whether to use already processed information on OSM "directions" links from a previous run
-   - `use_existing_feature` (bool): Whether to use already processed OSM features from a previous run
+    - `use_existing_feature` (bool): Whether to use already processed OSM features from a previous run
     - `from_existing_timestamp`: When either `use_existing_svg` or `use_existing_feature` is set to `True`, this is the timestamp of an existing run from which already processed data will be pulled
+    - `use_only_existing` (bool): Intended to be used when rerunning existing data and you do not wish to add any additional data from project files. This may apply when project files are updated, or more commonly when using a sampled subset for consistent testing.
     - `prepare_only`: Boolean value indicating whether only the preliminary stage of data preparation will be run. See details in section below for use cases.
     - `id_field`, `location_field`, `precision_field`, and `osm_str`: These are static variables that should not be changed for replication, yet are made available to support adapting this code for additional datasets in the future. `id_field` is a unique ID field in the input data, `location_field` is the field containing OSM links, `precision_field` described the precision level of the OSM feature relative to the true project feature, and `osm_str` is the string used to identify OSM links.
     - `output_project_fields` (list): the columns from the input data to be included in the output GeoJSONs as feature properties
