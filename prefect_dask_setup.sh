@@ -7,10 +7,19 @@
 # prefect setup
 pip install prefect==2.2.0 prefect-dask bokeh>=2.1.1
 
+
+# in all terminals, first run the below commands
+#   - activating the conda env in these terminals is necessary for access to prefect/dask commands
+#   - adding the project directory to the conda path and being in the project directory are necessary to ensure local modules can be imported by the dask workers
+#        + using conda develop and being in the project directory may be redundant
+conda activate china_osm
+cd /path/to/china-osm-geodata
+conda develop .
+
 # terminal 1
 prefect orion start
 
-# terminal 2
+# terminal 2 (optional)
 prefect agent start -q "china-osm-queue"
 
 # terminal 3

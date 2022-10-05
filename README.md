@@ -80,6 +80,8 @@ Project data prepared using AidData's TUFF (Tracking Underreport Financial Flows
 
 While the code developed has considerable error handling built in, it is still possibly to encounter scenarios where APIs are overloaded, web pages are down, or other edge cases that result in errors. Most errors will still be handled to avoid processing failures, and saved in dedicated outputs detailing the projects and error messages involved.
 
+Note: This repository has only been tested on recent Ubuntu based Linux and MacOS systems
+
 
 ### Setup Environment:
 
@@ -93,16 +95,17 @@ cd china-osm-geodata
 
 2. Setup Python environment:
 
-For the easiest setup, we strongly suggest using Anaconda and following the steps below. If you do not already have Anaconda installed, please see their [installation guides](https://docs.anaconda.com/anaconda/install/index.html).
-
+For the easiest setup, we strongly suggest using Conda and following the steps below.
+- If you do not already have Anaconda/Miniconda installed, please see their [installation guides](https://conda.io/projects/conda/en/latest/user-guide/install/index.html).
+- Using Miniconda instead of the full Anaconda will be significant quicker to download/install.
 
 
 ```
-conda create -n china_osm python=3.8
+conda create -n china_osm python=3.9
 conda activate china_osm
-conda install -c conda-forge bs4 shapely pandas geopandas selenium==3.141.0 openpyxl
+conda install -c conda-forge bs4 shapely pandas geopandas selenium==3.141.0 openpyxl conda-build
 pip install osm2geojson==0.1.29 overpass
-pip install prefect==2.2.0 prefect-dask bokeh>=2.1.1
+pip install prefect==2.2.0 prefect-dask==0.1.2 bokeh>=2.1.1
 ```
 
 Notes:
@@ -140,7 +143,10 @@ tar -xvf geckodriver-v0.31.0-macos.tar.gz
 Notes:
 - Varying builds of Firefox and Geckodriver may perform differently or have issues. This has only been run on Linux and was originally tested with Firefox 90.0.2 and Geckodriver 0.29.1, and has since been updated to Firefox 104.0 and Geckdriver 0.31.0.
 - If you are running on a local machine with Firefox (or Chrome) already installed, you may opt to use that instead of downloading and installing a new copy. This will require modifying the code and as noted above, other versions have not been tested.
-
+- On MacOS you will likely need to allow Geckodriver to run: see [this simple guide](https://stackoverflow.com/a/67205039)
+- If you wish to use your existing system install of Firefix, you will need to link your system Firefox bin to the project directory:
+    - `ln -s /usr/lib/firefox/firefox-bin ./firefox/firefox-bin`
+    - Note that the above path for the system firefox-bin in /usr/lib is common to Linux, but may vary across systems
 
 You also have the option to install chromedriver with your own system install of Chrome
 ```
@@ -151,6 +157,12 @@ Notes:
 - If you are using Chrome you will need to edit the Python code to initiate the Selenium webdriver with Chrome instead of Firefox.
     - Some components to do this are commented out in the code, but they are not likely complete and not tested.
 - The geckodriver and Firefox/Chrome install may need permissions adjusted after initial install
+
+Potential issues:
+- If you encounter errors which include "Library not loaded" and "openssl" in the library path you may need to use the following steps (more likely to occur on MacOS)
+    - `brew install openssl@1.1`
+    - `ln -s /usr/local/opt/openssl/lib/libssl.1.1.dylib /usr/local/lib`
+    - `ln -s /usr/local/opt/openssl/lib/libcrypto.1.1.dylib /usr/local/lib`
 
 3. Adjust variables
 
