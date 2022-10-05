@@ -144,10 +144,10 @@ tar -xvf geckodriver-v0.31.0-macos.tar.gz
 Notes:
 - Varying builds of Firefox and Geckodriver may perform differently or have issues. This has only been run on Linux and was originally tested with Firefox 90.0.2 and Geckodriver 0.29.1, and has since been updated to Firefox 104.0 and Geckdriver 0.31.0.
 - If you are running on a local machine with Firefox (or Chrome) already installed, you may opt to use that instead of downloading and installing a new copy. This will require modifying the code and as noted above, other versions have not been tested.
-- On MacOS you will likely need to allow Geckodriver to run: see [this simple guide](https://stackoverflow.com/a/67205039)
-- If you wish to use your existing system install of Firefix, you will need to link your system Firefox bin to the project directory:
-    - `ln -s /usr/lib/firefox/firefox-bin ./firefox/firefox-bin`
-    - Note that the above path for the system firefox-bin in /usr/lib is common to Linux, but may vary across systems
+- On MacOS you will likely need to allow Geckodriver to run: see [this guide](https://stackoverflow.com/a/67205039)
+- If you wish to use your existing system install of Firefox, you will need to link your system Firefox bin to the project directory. Here are commands that you may have to tweak depending on where Firefox is installed:
+    - Linux: `ln -s /usr/lib/firefox/firefox-bin ./firefox/firefox-bin`
+    - MacOS: `ln -s /Applications/Firefox.app/Contents/MacOS/firefox-bin ./firefox/firefox-bin`
 
 You also have the option to install chromedriver with your own system install of Chrome
 ```
@@ -156,11 +156,12 @@ unzip chromedriver_linux64.zip
 ```
 Notes:
 - If you are using Chrome you will need to edit the Python code to initiate the Selenium webdriver with Chrome instead of Firefox.
-    - Some components to do this are commented out in the code, but they are not likely complete and not tested.
+    - Some components to do this are commented out in the code, but they are likely not complete and not tested.
 - The geckodriver and Firefox/Chrome install may need permissions adjusted after initial install
 
 Potential issues:
-- If you encounter errors which include "Library not loaded" and "openssl" in the library path you may need to use the following steps (more likely to occur on MacOS)
+- Sometimes openssl will not load correctly. First, try [this](https://stackoverflow.com/a/54389947), which will rebuild Python's cryptography package for your system and hopefully link to the correct openssl library. On MacOS, we've run into a similar "Library not loaded" error regarding openssl. To fix that issue, try the following steps:
+    - [install brew](https://brew.sh/)
     - `brew install openssl@1.1`
     - `ln -s /usr/local/opt/openssl/lib/libssl.1.1.dylib /usr/local/lib`
     - `ln -s /usr/local/opt/openssl/lib/libcrypto.1.1.dylib /usr/local/lib`
