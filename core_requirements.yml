@@ -1,0 +1,19 @@
+name: china_osm
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - conda-build
+  - bs4=4.11.1
+  - geopandas=0.11.1
+  - openpyxl=3.0.10
+  - pandas=1.5.0
+  - pip=22.2.2
+  - python=3.9.13
+  - selenium=4.5.0
+  - shapely=1.8.4
+  - pip:
+    - osm2geojson==0.2.0
+    - overpass==0.7
+    - prefect==2.4.3
+    - prefect-dask==0.2.0.post1

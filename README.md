@@ -109,10 +109,11 @@ pip install prefect==2.2.0 prefect-dask==0.1.2 bokeh>=2.1.1
 ```
 
 Notes:
-- The `environment.yml` file is available with specific versions of packages installed by Conda if needed (specific Selenium version specified above).
-    - Use `conda env create -f environment.yml` to builds from this file.
-    - You will still need to install packages using pip after creating the environment.
+- The `core_requirements.yml` file is available with specific versions of core packages installed by Conda if needed (specific Selenium version specified above).
+    - Use `conda env create -f core_requirements.yml` to builds from this file.
+    - You may still need to install packages using pip after creating the environment in some cases.
 - pip was needed to install osm2geojson and prefect in order to get newer versions (may be available through latest conda, but not tested in our build)
+- Due to variability in dependency versions that will work across systems (e.g., Linux vs Mac) we suggest using the core_requirements to create your build rather than replicating our full test environment. If you do wish to replicate our test environmentally exactly (built for Ubuntu based Linux), you may use the `environment.yml` file instead.
 
 Add the path to where you cloned the repo to your Conda environment:
 `conda develop /path/to/china-osm-geodata`
