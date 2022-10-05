@@ -113,7 +113,7 @@ Notes:
     - Use `conda env create -f core_environment.yml` to builds from this file.
     - You may still need to install packages using pip after creating the environment in some cases.
 - pip was needed to install osm2geojson and prefect in order to get newer versions (may be available through latest conda, but not tested in our build)
-- Due to variability in dependency versions that will work across systems (e.g., Linux vs Mac) we suggest using the core_requirements to create your build rather than replicating our full test environment. If you do wish to replicate our test environmentally exactly (built for Ubuntu based Linux), you may use the `environment.yml` file instead.
+- Due to variability in dependency versions that will work across systems (e.g., Linux vs Mac) we suggest using the core_environment to create your build rather than replicating our full test environment. If you do wish to replicate our test environmentally exactly (built for Ubuntu based Linux), you may use the `environment.yml` file instead.
 
 Add the path to where you cloned the repo to your Conda environment:
 `conda develop /path/to/china-osm-geodata`
