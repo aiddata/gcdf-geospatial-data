@@ -128,7 +128,12 @@ def load_simple_input_data(base_dir, release_name, csv_name, output_project_fiel
     all_df["finance_type"] = "all"
 
     input_df = all_df[output_project_fields].copy(deep=True)
-    input_df['id'] = all_df[id_field].astype(int)
+    try:
+        input_df['id'] = all_df[id_field].astype(int)
+    except:
+        warnings.warn('ID field could not be converted to integer')
+        input_df['id'] = all_df[id_field]
+        
     input_df['location'] = all_df[location_field]
     if version_field:
         input_df['version'] = all_df[version_field]
