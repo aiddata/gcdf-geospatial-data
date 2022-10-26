@@ -212,7 +212,6 @@ def osm_features_flow(flow_task_list):
     return results_df
 
 
-
 results_df = osm_features_flow(unique_task_list)
 
 # rebuild original task list to populate results for duplicate tasks
