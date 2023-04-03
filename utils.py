@@ -271,7 +271,7 @@ def clean_osm_link(link, version=None):
     return clean_link, osm_type, osm_id
 
 
-def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None):
+def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None, enforce_precision=False):
 
     link_list_df = base_df.copy(deep=True)
 
@@ -281,19 +281,28 @@ def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None):
     # get osm links from location field
     link_list_df["osm_list"] = link_list_df['location'].apply(lambda x: split_and_match_text(x, [" ", "\n"], osm_str))
 
-    link_list_df['has_precision_vals'] = link_list_df.precision.notnull()
-    link_list_df["precision_list"] = link_list_df['precision'].apply(lambda x: [i for i in str(x).split(', ') if i != ''])
-
-    link_list_df['osm_count'] = link_list_df['osm_list'].apply(lambda x: len(x))
-    link_list_df['precision_count'] = link_list_df['precision_list'].apply(lambda x: len(x))
-
     # placeholder for if we ever utilize osm version history
     link_list_df["osm_version"] = link_list_df["version"]
 
 
-    link_list_df['has_matching_counts'] = link_list_df['osm_count'] == link_list_df['precision_count']
+    if enforce_precision:
+        link_list_df['osm_tuple'] = link_list_df.loc[link_list_df.has_matching_counts].apply(lambda x: list(zip(x.osm_list, x.precision_list)), axis=1)
 
-    link_list_df['osm_tuple'] = link_list_df.loc[link_list_df.has_matching_counts].apply(lambda x: list(zip(x.osm_list, x.precision_list)), axis=1)
+    else:
+
+        link_list_df['has_precision_vals'] = link_list_df.precision.notnull()
+        link_list_df["precision_list"] = link_list_df['precision'].apply(lambda x: [i for i in str(x).split(', ') if i != ''])
+
+        link_list_df['osm_count'] = link_list_df['osm_list'].apply(lambda x: len(x))
+        link_list_df['precision_count'] = link_list_df['precision_list'].apply(lambda x: len(x))
+
+        link_list_df['has_matching_counts'] = link_list_df['osm_count'] == link_list_df['precision_count']
+
+        def fill_precision_list(osm_list):
+            filled_precision_list = ['precise'] * len(osm_list)
+            return list(zip(osm_list, filled_precision_list))
+
+        link_list_df['osm_tuple'] = link_list_df.osm_list.apply(lambda x: fill_precision_list(x))
 
 
     link_df = link_list_df.explode('osm_tuple').copy(deep=True)
@@ -313,8 +322,9 @@ def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None):
         link_df.loc[link_df.valid & link_df.osm_link.str.contains('|'.join(invalid_str_list)), 'valid'] = False
 
     link_df.loc[link_df.osm_link == '', 'valid'] = False
-    link_df.loc[~link_df.has_precision_vals, 'valid'] = False
-    link_df.loc[~link_df.has_matching_counts, 'valid'] = False
+    if enforce_precision:
+        link_df.loc[~link_df.has_precision_vals, 'valid'] = False
+        link_df.loc[~link_df.has_matching_counts, 'valid'] = False
 
     link_df[["clean_link", "osm_type", "osm_id"]] = link_df.apply(lambda x: clean_osm_link(x.osm_link, x.osm_version) if x.valid else (None, None, None), axis=1, result_type='expand')
 
