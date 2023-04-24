@@ -464,8 +464,12 @@ def create_web_driver():
     # return driver
 
 
-def run_task(unique_id, clean_link):
-    return [unique_id, get_svg_path(clean_link)]
+def run_svg_task(unique_id, clean_link):
+    try:
+        result = get_svg_path(clean_link)
+    except:
+        result = "error"
+    return [unique_id, result]
 
 
 def quit_driver(n):
@@ -495,7 +499,7 @@ def generate_svg_paths(feature_prep_df, overwrite=False, upper_limit=False, npro
         if nprocs > 1:
 
             with mp.Pool(nprocs, initializer=create_web_driver) as pool:
-                results_list = list(pool.starmap(run_task, task_list))
+                results_list = list(pool.starmap(run_svg_task, task_list))
                 for p in results_list:
                     feature_prep_df.loc[p[0], "svg_path"] = p[1]
                 _ = pool.map(quit_driver, range(nprocs))
@@ -515,6 +519,7 @@ def generate_svg_paths(feature_prep_df, overwrite=False, upper_limit=False, npro
                         d = get_svg_path(clean_link, driver)
                     except Exception as e:
                         print(f"\tAttempt {attempts}/{max_attempts}", repr(e))
+                        d = "error"
                 # results.append([unique_id, d])
                 feature_prep_df.loc[unique_id, "svg_path"] = d
 
