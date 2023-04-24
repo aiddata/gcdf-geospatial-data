@@ -280,7 +280,7 @@ def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None, enfo
     # keep rows where location field contains at least one osm link
     link_list_df['has_osm_str'] = link_list_df.location.notnull() & link_list_df.location.str.contains(osm_str)
     # get osm links from location field
-    link_list_df["osm_list"] = link_list_df['location'].apply(lambda x: split_and_match_text(x, [" ", "\n"], osm_str))
+    link_list_df["osm_list"] = link_list_df['location'].apply(lambda x: split_and_match_text(x, [" ", "\n", ","], osm_str))
 
     # placeholder for if we ever utilize osm version history
     link_list_df["osm_version"] = link_list_df["version"]
