@@ -147,9 +147,14 @@ sampled_feature_prep_df = utils.sample_and_validate(link_df, sample_size=sample_
 
 # TODO: deduplicate svg links before processing
 svg_overwrite = not use_existing_svg
-feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=svg_overwrite, upper_limit=None, nprocs=max_workers)
+svg_feature_prep_df = utils.generate_svg_paths(sampled_feature_prep_df, overwrite=svg_overwrite, upper_limit=None, nprocs=max_workers)
 
-utils.save_df(feature_prep_df, feature_prep_df_path)
+utils.save_df(svg_feature_prep_df, feature_prep_df_path)
+
+
+# print out svg gen errors and create separate df without errors?
+feature_prep_df = svg_feature_prep_df[svg_feature_prep_df['svg_path'] != "error"].copy()
+
 
 if prepare_only:
     print(f'Dataset prep complete: {timestamp}')
