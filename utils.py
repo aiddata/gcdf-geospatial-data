@@ -551,12 +551,13 @@ def get_svg_path(url, max_attempts=10):
         time.sleep(3)
         soup = BS(driver.page_source, "html.parser")
         try:
-            d = soup.find("path", {"class": "leaflet-interactive"})["d"]
+            path_element = soup.find("path", {"class": "leaflet-interactive"})
+            d = path_element["d"]
             if d == "M0 0":
                 raise Exception("Failed to load SVG")
         except:
             if attempts >= max_attempts:
-                raise Exception("max_attempts exceeded waiting for page to load")
+                raise Exception(f"max_attempts exceeded waiting for page to load: {url}")
             else:
                 attempts += 1
     # driver.close()
