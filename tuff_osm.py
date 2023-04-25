@@ -70,6 +70,7 @@ prepare_only = config.getboolean(run_name, "prepare_only")
 
 use_existing_svg  = config.getboolean(run_name, "use_existing_svg")
 use_existing_feature  = config.getboolean(run_name, "use_existing_feature")
+use_existing_raw_osm  = config.getboolean(run_name, "use_existing_raw_osm")
 from_existing = use_existing_svg or use_existing_feature
 use_only_existing  = config.getboolean(run_name, "use_only_existing")
 
@@ -155,7 +156,6 @@ utils.save_df(svg_feature_prep_df, feature_prep_df_path)
 # print out svg gen errors and create separate df without errors?
 feature_prep_df = svg_feature_prep_df[svg_feature_prep_df['svg_path'] != "error"].copy()
 
-
 if prepare_only:
     print(f'Dataset prep complete: {timestamp}')
     sys.exit("Exiting as `prepare_only` option was set.")
@@ -203,21 +203,34 @@ for i in task_list:
         unique_task_list.append(i)
 
 
-# BOTTLENECK
-# TODO: optimize parallelization [~1500 mixed type tasks about 45 minutes to run w/ 10 workers]
 
 # prefect
 @flow(task_runner=ActiveTaskRunner)
-def osm_features_flow(flow_task_list):
+def osm_features_flow(flow_task_list, overwrite=False):
     task_results = []
-    task_futures = utils.get_osm_feat.map(flow_task_list)
-    for future in task_futures:
-        task_results.append(future.result())
-    results_df = utils.process(task_futures, task_list, task_results_path)
+    for i in flow_task_list:
+        osm_id = i[3]
+        existing_path = existing_dir / "raw_geojsons" / f"{osm_id}.geojson"
+        current_path = output_dir / "raw_geojsons" / f"{osm_id}.geojson"
+        if not overwrite and from_existing and os.path.exists(existing_path):
+            osm_feat = utils.get_existing_osm_feat(i[0], existing_path, current_path)
+            # shutil.copy(existing_path, current_path)
+            # existing_feat = shape(fiona.open(existing_path).next()['geometry'])
+            # osm_feat = (i[0], existing_feat, None)
+        else:
+            osm_feat = utils.get_osm_feat.submit(i)
+            _ = utils.build_tmp_geojson.submit(osm_feat, current_path)
+        task_results.append(osm_feat)
+
+    results_df = utils.process(task_results, task_list, task_results_path)
     return results_df
 
+overwrite = not use_existing_raw_osm
+results_df = osm_features_flow(unique_task_list, overwrite=overwrite)
 
-results_df = osm_features_flow(unique_task_list)
+
+
+# ==========================================================
 
 # rebuild original task list to populate results for duplicate tasks
 results_df = results_df.merge(active_task_df[['unique_id', 'clean_link']], on='unique_id', how='left')
@@ -225,27 +238,20 @@ results_df.drop(columns=['unique_id'], inplace=True)
 results_df = active_task_df[['unique_id', 'clean_link']].merge(results_df, on='clean_link', how='left')
 results_df.drop(columns=['clean_link'], inplace=True)
 
-
-
-# ==========================================================
 # join processing results with existing data and validate results
-
 output_df = feature_prep_df.merge(results_df, on="unique_id", how="left")
 output_df['feature'] = output_df['feature_x'].where(output_df['feature_x'].notnull(), output_df['feature_y'])
 output_df['flag'] = output_df['flag_x'].where(output_df['flag_x'].notnull(), output_df['flag_y'])
 output_df.drop(columns=['feature_x', 'feature_y', 'flag_x', 'flag_y'], inplace=True)
 
-
+# prepare data for next steps and csv outputs
 valid_df = output_df[output_df.feature.notnull() & output_df.flag.isnull()].copy()
-unprocessed_df = output_df[output_df.feature.isnull() & output_df.flag.isnull()].copy()
 errors_df = output_df[output_df.feature.isnull() & output_df.flag.notnull()].copy()
+unprocessed_df = output_df[output_df.feature.isnull() & output_df.flag.isnull()].copy()
 
 print("\t{} errors found out of {} tasks ({} were not procesed)".format(len(errors_df), len(output_df), len(unprocessed_df)))
-
 utils.save_df(valid_df, processing_valid_path)
 utils.save_df(errors_df, processing_errors_path)
-
-
 
 
 # ==========================================================

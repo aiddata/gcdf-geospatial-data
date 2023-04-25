@@ -9,9 +9,12 @@ import warnings
 import functools
 import re
 import multiprocessing as mp
+import shutil
 
+import fiona
 from bs4 import BeautifulSoup as BS
-from shapely.geometry import Point, Polygon, LineString, MultiPolygon
+import shapely
+from shapely.geometry import shape, Point, Polygon, LineString, MultiPolygon
 from shapely.ops import unary_union
 import pandas as pd
 import geopandas as gpd
@@ -40,6 +43,7 @@ from prefect import task
 
 
 def init_output_dir(output_dir):
+    (output_dir / "raw_geojsons").mkdir(parents=True, exist_ok=True)
     (output_dir / "geojsons").mkdir(parents=True, exist_ok=True)
 
 
@@ -793,6 +797,21 @@ def get_directions_geom(url, d):
     return feat
 
 
+@task(retries=5, retry_delay_seconds=60)
+def build_tmp_geojson(future, path):
+    unique_id, shape, msg = future
+    if shape is not None:
+        geom = shapely.geometry.mapping(shape)
+        props = {}
+        output_single_feature_geojson(geom, props, path)
+
+@task(retries=5, retry_delay_seconds=60)
+def get_existing_osm_feat(unique_id, existing_path, current_path):
+    shutil.copy(existing_path, current_path)
+    existing_feat = shape(fiona.open(existing_path).next()['geometry'])
+    osm_feat = (unique_id, existing_feat, None)
+    return osm_feat
+
 def convert_osm_feat_to_multipolygon(fn):
     """Buffer a shapely geometry to create a Polygon if not already a Polygon or MultiPolygon
 
@@ -834,6 +853,7 @@ def buffer_osm_feat(fn):
 #         return state.Success(result='unknown failure')
 #     else:
 #         return new_state
+
 
 
 # @task(log_stdout=True, state_handlers=[handle_failure], task_run_name=lambda **kwargs: f"{kwargs['task'][1]}")
