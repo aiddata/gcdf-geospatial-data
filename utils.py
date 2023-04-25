@@ -871,7 +871,10 @@ def get_osm_feat(task):
         elif osm_type == "way":
             feat = build_way_geom(soup)
         elif osm_type == "relation":
-            feat = get_relation_geom(osm_id, osm_type, api)
+            try:
+                feat = get_relation_geom(osm_id, osm_type, api)
+            except Exception as e:
+                return (unique_id, None, f'osm feature error: {e}')
         else:
             return (unique_id, None, 'invalid osm type ({osm_type})')
 
