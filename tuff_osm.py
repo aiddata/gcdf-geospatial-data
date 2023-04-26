@@ -13,6 +13,8 @@ import json
 import configparser
 import itertools
 from pathlib import Path
+import time
+import shutil
 
 import shapely.wkt
 
@@ -156,6 +158,8 @@ utils.save_df(svg_feature_prep_df, feature_prep_df_path)
 # print out svg gen errors and create separate df without errors?
 feature_prep_df = svg_feature_prep_df[svg_feature_prep_df['svg_path'] != "error"].copy()
 
+
+
 if prepare_only:
     print(f'Dataset prep complete: {timestamp}')
     sys.exit("Exiting as `prepare_only` option was set.")
@@ -202,6 +206,8 @@ for i in task_list:
         unique_links.append(i[1])
         unique_task_list.append(i)
 
+if use_existing_raw_osm:
+    shutil.copytree(existing_dir / "raw_geojsons", output_dir / "raw_geojsons", dirs_exist_ok=True)
 
 
 # prefect
@@ -212,18 +218,15 @@ def osm_features_flow(flow_task_list, overwrite=False):
         osm_id = i[3]
         existing_path = existing_dir / "raw_geojsons" / f"{osm_id}.geojson"
         current_path = output_dir / "raw_geojsons" / f"{osm_id}.geojson"
-        if not overwrite and from_existing and os.path.exists(existing_path):
+        if i[2] != "directions" and not overwrite and os.path.exists(existing_path):
             osm_feat = utils.get_existing_osm_feat(i[0], existing_path, current_path)
-            # shutil.copy(existing_path, current_path)
-            # existing_feat = shape(fiona.open(existing_path).next()['geometry'])
-            # osm_feat = (i[0], existing_feat, None)
         else:
-            osm_feat = utils.get_osm_feat.submit(i)
-            _ = utils.build_tmp_geojson.submit(osm_feat, current_path)
+            osm_feat = utils.get_osm_feat.submit(i, checkpoint_dir=output_dir/"raw_geojsons")
+        time.sleep(0.1)
         task_results.append(osm_feat)
 
-    results_df = utils.process(task_results, task_list, task_results_path)
-    return results_df
+    results_df = utils.process.submit(task_results, task_list, task_results_path)
+    return results_df.result()
 
 overwrite = not use_existing_raw_osm
 results_df = osm_features_flow(unique_task_list, overwrite=overwrite)
