@@ -118,6 +118,8 @@ Notes:
 Add the path to where you cloned the repo to your Conda environment:
 `conda develop /path/to/china-osm-geodata`
 
+This may not be necessary, but can potentially prevent connection errors within Prefect:
+`prefect config set PREFECT_API_ENABLE_HTTP2=false`
 
 2. Install Firefox binary and geckodriver locally.
 
@@ -205,4 +207,3 @@ Potential issues:
 
 1. Run the Python script
     - `python tuff_osm.py`
-
