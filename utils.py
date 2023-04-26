@@ -803,12 +803,6 @@ def build_tmp_geojson(shape, path):
         props = {}
         output_single_feature_geojson(geom, props, path)
 
-@task(retries=5, retry_delay_seconds=60)
-def get_existing_osm_feat(unique_id, existing_path, current_path):
-    shutil.copy(existing_path, current_path)
-    existing_feat = shape(fiona.open(existing_path).next()['geometry'])
-    osm_feat = (unique_id, existing_feat, None)
-    return osm_feat
 
 def convert_osm_feat_to_multipolygon(fn):
     """Buffer a shapely geometry to create a Polygon if not already a Polygon or MultiPolygon
@@ -852,6 +846,14 @@ def buffer_osm_feat(fn):
 #     else:
 #         return new_state
 
+
+# @task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True)
+@convert_osm_feat_to_multipolygon
+@buffer_osm_feat
+def get_existing_osm_feat(unique_id, existing_path, current_path):
+    existing_feat = shape(fiona.open(existing_path).next()['geometry'])
+    osm_feat = (unique_id, existing_feat, None)
+    return osm_feat
 
 
 # @task(log_stdout=True, state_handlers=[handle_failure], task_run_name=lambda **kwargs: f"{kwargs['task'][1]}")
