@@ -857,7 +857,7 @@ def buffer_osm_feat(fn):
 
 
 # @task(log_stdout=True, state_handlers=[handle_failure], task_run_name=lambda **kwargs: f"{kwargs['task'][1]}")
-@task(retries=5, retry_delay_seconds=60)
+@task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True)
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
 def get_osm_feat(task):
@@ -901,7 +901,7 @@ def get_osm_feat(task):
     return (unique_id, feat, None)
 
 
-@task(retries=5, retry_delay_seconds=5)
+@task(retries=5, retry_delay_seconds=5, persist_result=True)
 def process(r, t, output_path):
     combined = zip(r, t)
     results = []

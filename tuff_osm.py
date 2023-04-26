@@ -205,7 +205,7 @@ for i in task_list:
 
 
 # prefect
-@flow(task_runner=ActiveTaskRunner)
+@flow(task_runner=ActiveTaskRunner, persist_result=True)
 def osm_features_flow(flow_task_list, overwrite=False):
     task_results = []
     for i in flow_task_list:
