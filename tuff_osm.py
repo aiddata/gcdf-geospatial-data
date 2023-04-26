@@ -247,14 +247,20 @@ output_df['feature'] = output_df['feature_x'].where(output_df['feature_x'].notnu
 output_df['flag'] = output_df['flag_x'].where(output_df['flag_x'].notnull(), output_df['flag_y'])
 output_df.drop(columns=['feature_x', 'feature_y', 'flag_x', 'flag_y'], inplace=True)
 
+
 # prepare data for next steps and csv outputs
-valid_df = output_df[output_df.feature.notnull() & output_df.flag.isnull()].copy()
-errors_df = output_df[output_df.feature.isnull() & output_df.flag.notnull()].copy()
+
+error_ids = output_df.loc[output_df.feature.isnull() & output_df.flag.notnull(), "id"]
+error_df = output_df.loc[output_df.id.isin(error_ids)].copy()
+error_df.loc[error_df.flag.isnull(), "flag"] = "valid feature in project with at least one other invalid feature"
+
+valid_df = output_df.loc[~output_df.id.isin(error_ids)].copy()
+
 unprocessed_df = output_df[output_df.feature.isnull() & output_df.flag.isnull()].copy()
 
-print("\t{} errors found out of {} tasks ({} were not procesed)".format(len(errors_df), len(output_df), len(unprocessed_df)))
+print("\t{} errors found out of {} tasks ({} were not procesed)".format(len(error_ids), len(output_df), len(unprocessed_df)))
 utils.save_df(valid_df, processing_valid_path)
-utils.save_df(errors_df, processing_errors_path)
+utils.save_df(error_df, processing_errors_path)
 
 
 # ==========================================================
