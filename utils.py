@@ -950,9 +950,8 @@ def write_json_to_file(json_dict, path, **kwargs):
         path (str): path to write file to
         **kwargs: additional keyword arguments to pass to json.dump
     """
-    file = open(path, "w")
-    json.dump(json_dict, file, **kwargs)
-    file.close()
+    with open(path, "w") as f:
+        json.dump(json_dict, f, **kwargs)
 
 
 def output_single_feature_geojson(geom, props, path):
