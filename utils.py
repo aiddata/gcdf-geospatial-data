@@ -797,9 +797,7 @@ def get_directions_geom(url, d):
     return feat
 
 
-@task(retries=5, retry_delay_seconds=60)
-def build_tmp_geojson(future, path):
-    unique_id, shape, msg = future
+def build_tmp_geojson(shape, path):
     if shape is not None:
         geom = shapely.geometry.mapping(shape)
         props = {}
@@ -860,7 +858,7 @@ def buffer_osm_feat(fn):
 @task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True)
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
-def get_osm_feat(task):
+def get_osm_feat(task, checkpoint_dir=None):
     unique_id, clean_link, osm_type, osm_id, svg_path, api, version = task
 
     print(unique_id, osm_type)
@@ -898,7 +896,12 @@ def get_osm_feat(task):
         else:
             return (unique_id, None, 'invalid osm type ({osm_type})')
 
-    return (unique_id, feat, None)
+    osm_feat = (unique_id, feat, None)
+    if checkpoint_dir and osm_type != "directions":
+        checkpoint_path = checkpoint_dir / f"{osm_id}.geojson"
+        _ = build_tmp_geojson(feat, checkpoint_path)
+
+    return osm_feat
 
 
 @task(retries=5, retry_delay_seconds=5, persist_result=True)
