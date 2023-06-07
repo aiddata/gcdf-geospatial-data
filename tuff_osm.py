@@ -233,14 +233,14 @@ def osm_features_flow(flow_task_list, overwrite=False):
     return results_df.result()
 
 overwrite = not use_existing_raw_osm
-results_df = osm_features_flow(unique_task_list, overwrite=overwrite)
+raw_results_df = osm_features_flow(unique_task_list, overwrite=overwrite)
 
 
 
 # ==========================================================
 
 # rebuild original task list to populate results for duplicate tasks
-results_df = results_df.merge(active_task_df[['unique_id', 'clean_link']], on='unique_id', how='left')
+results_df = raw_results_df.merge(active_task_df[['unique_id', 'clean_link']], on='unique_id', how='left')
 results_df.drop(columns=['unique_id'], inplace=True)
 results_df = active_task_df[['unique_id', 'clean_link']].merge(results_df, on='clean_link', how='left')
 results_df.drop(columns=['clean_link'], inplace=True)
