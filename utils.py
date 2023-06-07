@@ -11,6 +11,7 @@ import re
 import multiprocessing as mp
 import shutil
 
+import numpy as np
 import fiona
 from bs4 import BeautifulSoup as BS
 import shapely
@@ -227,6 +228,8 @@ def load_existing(existing_dir, link_df, use_existing_feature, use_only_existing
     # if update_mode:
     #     df = df.loc[df["id"].isin(update_ids)].copy()
 
+    df = df.replace({np.nan: None})
+    df.osm_id = df.osm_id.apply(lambda x: x if x is None else str(int(x)))
     return df
 
 
