@@ -270,6 +270,10 @@ utils.save_df(valid_df, processing_valid_path)
 utils.save_df(error_df, processing_errors_path)
 
 
+# drop_ids = [60926, 63257, 66521, 71512, 86628, 61435, 64147, 86765, 88887, 95851, 87179, 68443, 96242, 96288, 72759, 94779, 95515, 92032, 89173, 89308, 90985, 90993, 91041, 90320, 92693, 92694, 92695, 92712, 90407, 90833, 90367, 90586, 90716, 90848, 90919, 92998, 89182, 90717, 90718, 90723, 90631, 92254, 92734, 71304, 71320, 90871, 70512, 91158]
+# drop_ids = [95638] + drop_ids
+# valid_df = valid_df.loc[~valid_df.id.isin(drop_ids)].copy()
+
 # ==========================================================
 # turn raw feature data into fully formed features and geojsons
 
