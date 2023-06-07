@@ -8,6 +8,7 @@ __pycache__
 *.pyc
 input_data/*
 !input_data/2.0release
+output_data/
 output_data/*/*/*/*
 !output_data/**/*.csv
 output_data/**/*gdf*.csv
