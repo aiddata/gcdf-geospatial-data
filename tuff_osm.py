@@ -249,7 +249,10 @@ results_df.drop(columns=['clean_link'], inplace=True)
 output_df = feature_prep_df.merge(results_df, on="unique_id", how="left")
 output_df['feature'] = output_df['feature_x'].where(output_df['feature_x'].notnull(), output_df['feature_y'])
 output_df['flag'] = output_df['flag_x'].where(output_df['flag_x'].notnull(), output_df['flag_y'])
-output_df.drop(columns=['feature_x', 'feature_y', 'flag_x', 'flag_y'], inplace=True)
+output_df.drop(columns=['feature_x', 'feature_y', 'flag_x', 'flag_y',], inplace=True)
+if "original_feature_x" in output_df.columns:
+    output_df['original_feature'] = output_df['original_feature_x'].where(output_df['original_feature_x'].notnull(), output_df['original_feature_y'])
+    output_df.drop(columns=['original_feature_x', 'original_feature_y'], inplace=True)
 
 
 # prepare data for next steps and csv outputs
@@ -276,6 +279,7 @@ print("Building GeoJSONs")
 
 # features from existing data need to be loaded from wkt
 valid_df['feature'] = valid_df['feature'].apply(lambda x: shapely.wkt.loads(x) if isinstance(x, str) else x)
+valid_df['original_feature'] = valid_df['original_feature'].apply(lambda x: shapely.wkt.loads(x) if isinstance(x, str) else x)
 
 grouped_df = utils.prepare_multipolygons(valid_df)
 
@@ -286,8 +290,34 @@ grouped_df = grouped_df.merge(input_data_df, on='id', how="left")
 
 # create individual geojsons
 for ix, row in grouped_df.iterrows():
-    path, geom, props = utils.prepare_single_feature(row)
+    path, geom, props = utils.prepare_single_feature(row, "multipolygon")
     utils.output_single_feature_geojson(geom, props, path)
+
+# -------
+
+original_feature_df = valid_df[["id", "original_feature"]].copy()
+
+original_feature_df["geojson_path"] = original_feature_df.id.apply(lambda x: output_dir / "osm_geojsons" / "individual" / f"{x}.geojson")
+
+# create individual geojsons
+for ix, row in original_feature_df.iterrows():
+    path, geom, props = utils.prepare_single_feature(row, "original_feature")
+    utils.output_single_feature_geojson(geom, props, path)
+
+import pandas as pd
+import geopandas as gpd
+gdf_list = []
+for i in original_feature_df['id'].to_list():
+    gj_path = output_dir / "osm_geojsons" / 'individual' / f'{i}.geojson'
+    gdf = gpd.read_file(gj_path)
+    gdf_list.append(gdf)
+
+combined_gdf = pd.concat(gdf_list)
+combined_gdf["feature_type"] = combined_gdf.geometry.apply(lambda x: x.type)
+
+for i in combined_gdf.feature_type.unique():
+    type_gdf = combined_gdf[combined_gdf.feature_type == i].copy()
+    type_gdf.to_file(output_dir / "osm_geojsons" / 'grouped' /  f"OSM_{i}.geojson", driver="GeoJSON")
 
 
 # ==========================================================

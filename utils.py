@@ -43,7 +43,9 @@ from prefect import task
 
 
 def init_output_dir(output_dir):
-    (output_dir / "raw_geojsons").mkdir(parents=True, exist_ok=True)
+    (output_dir / "osm_geojsons" / "cache").mkdir(parents=True, exist_ok=True)
+    (output_dir / "osm_geojsons" / "individual").mkdir(parents=True, exist_ok=True)
+    (output_dir / "osm_geojsons" / "grouped").mkdir(parents=True, exist_ok=True)
     (output_dir / "geojsons").mkdir(parents=True, exist_ok=True)
 
 
@@ -216,7 +218,7 @@ def load_existing(existing_dir, link_df, use_existing_feature, use_only_existing
             existing_processing_valid_df = pd.read_csv(existing_processing_valid_path)
             feature_df = existing_processing_valid_df.loc[existing_processing_valid_df.feature.notnull()].copy()
             feature_df['merge_field'] = feature_df.apply(lambda x: create_unique_osm_id(x), axis=1)
-            feature_df = feature_df[['merge_field', 'feature']].copy()
+            feature_df = feature_df[['merge_field', 'feature', 'original_feature']].copy()
             # deduplicate feature_df
             feature_df.drop_duplicates('merge_field', inplace=True)
             df = df.merge(feature_df, on='merge_field', how='left')
@@ -815,10 +817,10 @@ def convert_osm_feat_to_multipolygon(fn):
     """
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        unique_id, feat, flag = fn(*args, **kwargs)
+        unique_id, feat, flag, raw_feat = fn(*args, **kwargs)
         if feat and feat.type != "MultiPolygon":
             feat = MultiPolygon([feat])
-        return unique_id, feat, flag
+        return unique_id, feat, flag, raw_feat
     return wrapper
 
 
@@ -833,10 +835,12 @@ def buffer_osm_feat(fn):
     """
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        unique_id, feat, flag = fn(*args, **kwargs)
-        if feat and feat.type not in ["Polygon", "MultiPolygon"]:
-            feat = feat.buffer(0.00001)
-        return unique_id, feat, flag
+        unique_id, raw_feat, flag = fn(*args, **kwargs)
+        if raw_feat and raw_feat.type not in ["Polygon", "MultiPolygon"]:
+            feat = raw_feat.buffer(0.00001)
+        else:
+            feat = raw_feat
+        return unique_id, feat, flag, raw_feat
     return wrapper
 
 
@@ -916,7 +920,7 @@ def process(r, t, output_path):
         else:
             results.append(rr)
 
-    results_df = pd.DataFrame(results, columns=["unique_id", "feature", "flag"])
+    results_df = pd.DataFrame(results, columns=["unique_id", "feature", "flag", "original_feature"])
     results_df.to_csv(output_path, index=False)
     return results_df
 
@@ -979,10 +983,11 @@ def output_single_feature_geojson(geom, props, path):
 def generate_feature_properties(row):
     props = {
         "id": row.id,
-        "feature_count": row.feature_count,
     }
+    if "feature_count" in row:
+        props["feature_count"] = row.feature_count
     for k,v in row.items():
-        if k not in ['id', 'location', 'project_id', 'feature_list', 'feature_count', 'multipolygon', 'geojson_path', 'geometry']:
+        if k not in ['id', 'location', 'project_id', 'feature_list', 'feature_count', 'multipolygon', 'original_feature', 'geojson_path', 'geometry']:
             if isinstance(v, type(pd.NaT)) or pd.isnull(v):
                 v = None
             elif type(v) not in [int, str, float]:
@@ -991,12 +996,12 @@ def generate_feature_properties(row):
     return props
 
 
-def prepare_single_feature(row):
+def prepare_single_feature(row, feature_field):
     """Export each MultiPolygon to individual GeoJSON
         - id as filename
         - properties: id, feature_count, original fields defined in config
     """
-    geom = row.multipolygon.__geo_interface__
+    geom = row[feature_field].__geo_interface__
     props = generate_feature_properties(row)
     path = row.geojson_path
     return (path, geom, props)
