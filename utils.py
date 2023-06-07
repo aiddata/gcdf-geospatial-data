@@ -614,7 +614,10 @@ def get_soup(url, pretty_print=False, timeout=60):
 
 def check_osm_version_number(soup, version):
     current_version = soup.find('h4', text=re.compile('Version')).text.replace('\n', '').split('#')[-1]
-    version_match = int(current_version) == int(version)
+    try:
+        version_match = int(current_version) == int(version)
+    except ValueError:
+        version_match = False
     return version_match
 
 
