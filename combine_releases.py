@@ -48,7 +48,10 @@ for c in combined_outputs_gdf.columns:
 combined_outputs_gdf['AidData.Tuff.Project.ID'] = combined_outputs_gdf['AidData.Tuff.Project.ID'].astype(int)
 combined_outputs_gdf['Commitment.Year'] = combined_outputs_gdf['Commitment.Year'].apply(lambda x: str(int(x)) if x.is_integer() else "")
 
+# combined_outputs_gdf = combined_outputs_gdf.loc[combined_outputs_gdf.id != 95638].copy()
+
 combined_path = base_path / 'output_data' / 'combined_2000_to_2020.geojson'
 combined_outputs_gdf.to_file(combined_path, driver='GeoJSON')
 
+# combined_outputs_gdf = combined_outputs_gdf.loc[combined_outputs_gdf.id != 95638].copy()
 # combined_outputs_gdf.to_csv('/home/userx/Desktop/combined_2000_to_2020.csv', index=False)
