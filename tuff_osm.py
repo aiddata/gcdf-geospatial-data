@@ -77,6 +77,7 @@ use_existing_feature  = config.getboolean(run_name, "use_existing_feature")
 use_existing_raw_osm  = config.getboolean(run_name, "use_existing_raw_osm")
 from_existing = use_existing_svg or use_existing_feature
 use_only_existing  = config.getboolean(run_name, "use_only_existing")
+build_missing_cache  = config.getboolean(run_name, "build_missing_cache")
 
 if from_existing:
     existing_timestamp = config[run_name]["existing_timestamp"]
@@ -160,12 +161,9 @@ utils.save_df(svg_feature_prep_df, feature_prep_df_path)
 # print out svg gen errors and create separate df without errors?
 feature_prep_df = svg_feature_prep_df[svg_feature_prep_df['svg_path'] != "error"].copy()
 
-
-
 if prepare_only:
     print(f'Dataset prep complete: {timestamp}')
     sys.exit("Exiting as `prepare_only` option was set.")
-
 
 
 # ==========================================================
@@ -191,9 +189,17 @@ def generate_task_list(df, api):
     )))
     return task_list
 
+if use_existing_raw_osm:
+    shutil.copytree(existing_dir / "osm_geojsons" / "cache", output_dir / "osm_geojsons" / "cache", dirs_exist_ok=True)
 
-# only generate tasks for rows that have not been processed yet (checking field from potential existing data)
-task_df = feature_prep_df.loc[feature_prep_df.feature.isnull() & feature_prep_df.flag.isnull()].copy()
+
+if build_missing_cache:
+    # generate tasks for rows that may have a feature but the cached osm data is missing
+    feature_prep_df["missing_cache"] = feature_prep_df["osm_id"].apply(lambda x: not os.path.exists(output_dir / "osm_geojsons" / "cache" / f"{x}.geojson"))
+    task_df = feature_prep_df.loc[feature_prep_df.flag.isnull() & (feature_prep_df.feature.isnull() | (feature_prep_df.missing_cache & (feature_prep_df.osm_type != "directions")))].copy()
+else:
+    # only generate tasks for rows that have not been processed yet (checking field from potential existing data)
+    task_df = feature_prep_df.loc[feature_prep_df.feature.isnull() & feature_prep_df.flag.isnull()].copy()
 
 # subset for testing if needed
 active_task_df = task_df.iloc[:].copy()
@@ -208,9 +214,6 @@ for i in task_list:
         unique_links.append(i[1])
         unique_task_list.append(i)
 
-if use_existing_raw_osm:
-    shutil.copytree(existing_dir / "raw_geojsons", output_dir / "raw_geojsons", dirs_exist_ok=True)
-
 
 # prefect
 @flow(task_runner=ActiveTaskRunner, persist_result=True)
@@ -218,12 +221,11 @@ def osm_features_flow(flow_task_list, overwrite=False):
     task_results = []
     for i in flow_task_list:
         osm_id = i[3]
-        existing_path = existing_dir / "raw_geojsons" / f"{osm_id}.geojson"
-        current_path = output_dir / "raw_geojsons" / f"{osm_id}.geojson"
-        if i[2] != "directions" and not overwrite and os.path.exists(existing_path):
-            osm_feat = utils.get_existing_osm_feat(i[0], existing_path, current_path)
+        cache_path = output_dir / "osm_geojsons"/ "cache" / f"{osm_id}.geojson"
+        if i[2] != "directions" and not overwrite and os.path.exists(cache_path):
+            osm_feat = utils.get_existing_osm_feat(i[0], cache_path)
         else:
-            osm_feat = utils.get_osm_feat.submit(i, checkpoint_dir=output_dir/"raw_geojsons")
+            osm_feat = utils.get_osm_feat.submit(i, checkpoint_dir=output_dir/"osm_geojsons"/"cache")
         time.sleep(0.1)
         task_results.append(osm_feat)
 

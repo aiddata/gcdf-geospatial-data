@@ -850,8 +850,8 @@ def buffer_osm_feat(fn):
 # @task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True)
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
-def get_existing_osm_feat(unique_id, existing_path, current_path):
-    existing_feat = shape(fiona.open(existing_path).next()['geometry'])
+def get_existing_osm_feat(unique_id, path):
+    existing_feat = shape(fiona.open(path).next()['geometry'])
     osm_feat = (unique_id, existing_feat, None)
     return osm_feat
 
