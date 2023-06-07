@@ -65,8 +65,10 @@ precision_field = config[run_name]["precision_field"]
 osm_str = config[run_name]["osm_str"]
 invalid_str_list = json.loads(config[run_name]["invalid_str_list"])
 
-output_project_fields = json.loads(config[run_name]["output_project_fields"])
-
+# output_project_fields = json.loads(config[run_name]["output_project_fields"])
+individual_project_fields = json.loads(config[run_name]["individual_project_fields"])
+group_project_fields = json.loads(config[run_name]["group_project_fields"])
+output_project_fields = list(set(individual_project_fields + group_project_fields))
 
 prepare_only = config.getboolean(run_name, "prepare_only")
 
