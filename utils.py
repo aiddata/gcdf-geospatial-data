@@ -126,7 +126,10 @@ def load_simple_input_data(base_dir, release_name, csv_name, output_project_fiel
         pandas.DataFrame: combined input dataframe
     """
     # read in separate datasets
-    all_df = pd.read_csv(base_dir / "input_data" / release_name / csv_name)
+    if csv_name.endswith(".csv"):
+        all_df = pd.read_csv(base_dir / "input_data" / release_name / csv_name)
+    else:
+        all_df = pd.read_excel(base_dir / "input_data" / release_name / csv_name, sheet_name=0)
 
     all_df.dropna(axis=0, how='all', inplace=True)
     all_df.dropna(axis=1, how='all', inplace=True)
