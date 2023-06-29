@@ -20,3 +20,4 @@ latest/*.geojson
 *.tif.aux.xml
 dask-worker-space/
 archive/
+gb_v5/
