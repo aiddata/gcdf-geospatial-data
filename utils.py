@@ -1046,8 +1046,14 @@ def load_all_geojsons(output_dir):
 
 
 def export_combined_data(combined_gdf, output_dir):
-    # export all combined GeoJSON and a subset for each finance type
+
+    for c in combined_gdf.columns:
+        if " Date " in c:
+            combined_gdf[c] = combined_gdf[c].apply(lambda x: str(x))
+
     combined_gdf.to_file(output_dir / "all_combined_global.geojson", driver="GeoJSON")
+
+    # export all combined GeoJSON and a subset for each finance type
     for i in set(combined_gdf.finance_type):
         print(i)
         subgrouped_df = combined_gdf[combined_gdf.finance_type == i].copy()
