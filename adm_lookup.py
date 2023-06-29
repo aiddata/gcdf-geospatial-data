@@ -16,16 +16,18 @@ adm_data_dir.mkdir(parents=True, exist_ok=True)
 adm1_cgaz_path = f"https://github.com/wmgeolab/geoBoundaries/raw/b7dd6a55701c76a330500ad9d9240f2b9997c6a8/releaseData/CGAZ/geoBoundariesCGAZ_ADM1.gpkg"
 adm2_cgaz_path = f"https://github.com/wmgeolab/geoBoundaries/raw/b7dd6a55701c76a330500ad9d9240f2b9997c6a8/releaseData/CGAZ/geoBoundariesCGAZ_ADM2.gpkg"
 
-adm1_dst_path = adm_data_dir / f"geoBoundariesCGAZ_adm1.gpkg"
-adm2_dst_path = adm_data_dir / f"geoBoundariesCGAZ_adm2.gpkg"
+adm1_dst_path = adm_data_dir / f"geoBoundariesCGAZ_ADM1.gpkg"
+adm2_dst_path = adm_data_dir / f"geoBoundariesCGAZ_ADM2.gpkg"
 
 def download_file(url, dst):
     r = requests.get(url)
     with open(dst, 'wb') as f:
         f.write(r.content)
 
-download_file(adm1_cgaz_path, adm1_dst_path)
-download_file(adm2_cgaz_path, adm2_dst_path)
+if not adm1_dst_path.exists():
+    download_file(adm1_cgaz_path, adm1_dst_path)
+if not adm2_dst_path.exists():
+    download_file(adm2_cgaz_path, adm2_dst_path)
 
 adm1_gdf = gpd.read_file(adm1_dst_path, driver='GPKG')
 adm1_gdf.geometry = adm1_gdf.geometry.buffer(0)
