@@ -21,3 +21,4 @@ latest/*.geojson
 dask-worker-space/
 archive/
 gb_v5/
+stats/
