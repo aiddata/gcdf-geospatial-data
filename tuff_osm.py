@@ -17,6 +17,8 @@ import time
 import shutil
 
 import shapely.wkt
+import pandas as pd
+import geopandas as gpd
 
 from prefect import flow
 from prefect.task_runners import SequentialTaskRunner, ConcurrentTaskRunner
@@ -137,8 +139,7 @@ input_data_df = utils.load_simple_input_data(base_dir, release_name, csv_name, o
 
 base_df = input_data_df[['id', 'location', 'version', 'precision']].copy()
 
-link_df = utils.get_osm_links(base_df, osm_str, invalid_str_list, output_dir=output_dir)
-
+link_df = utils.get_osm_links(base_df, osm_str, invalid_str_list, output_dir=output_dir, enforce_precision=True)
 
 
 if from_existing:
@@ -299,7 +300,7 @@ for ix, row in grouped_df.iterrows():
 
 # -------
 
-original_feature_df = valid_df[["id", "original_feature"]].copy()
+original_feature_df = valid_df[["id", "original_feature", "osm_precision"]].copy()
 
 original_feature_df["geojson_path"] = original_feature_df.id.apply(lambda x: output_dir / "osm_geojsons" / "individual" / f"{x}.geojson")
 
@@ -308,8 +309,7 @@ for ix, row in original_feature_df.iterrows():
     path, geom, props = utils.prepare_single_feature(row, "original_feature")
     utils.output_single_feature_geojson(geom, props, path)
 
-import pandas as pd
-import geopandas as gpd
+
 gdf_list = []
 for i in original_feature_df['id'].to_list():
     gj_path = output_dir / "osm_geojsons" / 'individual' / f'{i}.geojson'

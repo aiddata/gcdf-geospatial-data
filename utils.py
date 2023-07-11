@@ -261,6 +261,9 @@ def clean_osm_link(link, version=None):
     osm_id = None
 
     # extract if link is for a way, node, relation, directions
+    if not link.startswith(("http://", "https://")):
+        link = "https://" + link
+        
     osm_type = link.split("/")[3].split("?")[0]
 
     if osm_type == "directions":
@@ -297,25 +300,54 @@ def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None, enfo
     # placeholder for if we ever utilize osm version history
     link_list_df["osm_version"] = link_list_df["version"]
 
+    def clean_precision_vals(raw):
+
+        x = str(raw).lower()
+        x = x.replace(" ", "")
+        x = x.replace(",and", ",")
+        x = x.replace("and", ",")
+        x = x.replace(" ", "")
+        x = x.replace(".", ",")
+        y = x.split(",")
+
+        def clean_precision_val(x):
+            if "adm" in x:
+                return f"adm{x[-1]}"
+            elif "appro" in x:
+                return "approximate"
+            elif "prec" in x:
+                return "precise"
+            elif x == "":
+                return "unknown: missing"
+            else:
+                return f"unknown: {x}"
+
+        z = [clean_precision_val(i) for i in y]
+
+        return z
+
+
+    def fill_precision_list(osm_list, precision_val):
+        filled_precision_list = [precision_val] * len(osm_list)
+        return list(zip(osm_list, filled_precision_list))
+
+
+    link_list_df['has_precision_vals'] = link_list_df.precision.notnull()
+    link_list_df["precision_list"] = link_list_df['precision'].apply(lambda x: clean_precision_vals(x))
+
+    link_list_df['osm_count'] = link_list_df['osm_list'].apply(lambda x: len(x))
+    link_list_df['precision_count'] = link_list_df['precision_list'].apply(lambda x: len(x))
+    # breakpoint()
+    link_list_df.loc[(link_list_df.precision_count == 1) & (link_list_df.osm_count > 1), "precision_list"] = link_list_df.loc[(link_list_df.precision_count == 1) & (link_list_df.osm_count > 1)].apply(lambda x: fill_precision_list(x.osm_list, x.precision_list[0]), axis=1)
+
+    link_list_df['precision_count'] = link_list_df['precision_list'].apply(lambda x: len(x))
+
+    link_list_df['has_matching_counts'] = link_list_df['osm_count'] == link_list_df['precision_count']
 
     if enforce_precision:
         link_list_df['osm_tuple'] = link_list_df.loc[link_list_df.has_matching_counts].apply(lambda x: list(zip(x.osm_list, x.precision_list)), axis=1)
-
     else:
-
-        link_list_df['has_precision_vals'] = link_list_df.precision.notnull()
-        link_list_df["precision_list"] = link_list_df['precision'].apply(lambda x: [i for i in str(x).split(', ') if i != ''])
-
-        link_list_df['osm_count'] = link_list_df['osm_list'].apply(lambda x: len(x))
-        link_list_df['precision_count'] = link_list_df['precision_list'].apply(lambda x: len(x))
-
-        link_list_df['has_matching_counts'] = link_list_df['osm_count'] == link_list_df['precision_count']
-
-        def fill_precision_list(osm_list):
-            filled_precision_list = ['precise'] * len(osm_list)
-            return list(zip(osm_list, filled_precision_list))
-
-        link_list_df['osm_tuple'] = link_list_df.osm_list.apply(lambda x: fill_precision_list(x))
+        link_list_df['osm_tuple'] = link_list_df.osm_list.apply(lambda x: fill_precision_list(x, "precise"))
 
 
     link_df = link_list_df.explode('osm_tuple').copy(deep=True)
