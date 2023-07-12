@@ -263,7 +263,7 @@ def clean_osm_link(link, version=None):
     # extract if link is for a way, node, relation, directions
     if not link.startswith(("http://", "https://")):
         link = "https://" + link
-        
+
     osm_type = link.split("/")[3].split("?")[0]
 
     if osm_type == "directions":
@@ -327,9 +327,12 @@ def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None, enfo
         return z
 
 
-    def fill_precision_list(osm_list, precision_val):
+    def fill_precision_list(osm_list, precision_val, return_tuple=False):
         filled_precision_list = [precision_val] * len(osm_list)
-        return list(zip(osm_list, filled_precision_list))
+        if return_tuple:
+            return list(zip(osm_list, filled_precision_list))
+        else:
+            return filled_precision_list
 
 
     link_list_df['has_precision_vals'] = link_list_df.precision.notnull()
@@ -347,7 +350,7 @@ def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None, enfo
     if enforce_precision:
         link_list_df['osm_tuple'] = link_list_df.loc[link_list_df.has_matching_counts].apply(lambda x: list(zip(x.osm_list, x.precision_list)), axis=1)
     else:
-        link_list_df['osm_tuple'] = link_list_df.osm_list.apply(lambda x: fill_precision_list(x, "precise"))
+        link_list_df['osm_tuple'] = link_list_df.osm_list.apply(lambda x: fill_precision_list(x, "precise", return_tuple=True))
 
 
     link_df = link_list_df.explode('osm_tuple').copy(deep=True)
