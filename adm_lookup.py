@@ -38,6 +38,7 @@ if not adm2_dst_path.exists():
 
 adm1_gdf = gpd.read_file(adm1_dst_path, driver='GPKG')
 adm1_gdf.geometry = adm1_gdf.geometry.buffer(0)
+adm1_gdf = adm1_gdf.loc[adm1_gdf.shapeID.notnull()].copy()
 
 china_gdf["adm1_id"] = china_gdf["geometry"].apply(lambda x: adm1_gdf[adm1_gdf.intersects(x)].shapeID.to_list())
 china_adm1_gdf = china_gdf.explode("adm1_id")
@@ -73,6 +74,7 @@ china_adm1_gdf[[i for i in china_adm1_gdf.columns if i != "geometry"]].to_csv(ad
 
 adm2_gdf = gpd.read_file(adm2_dst_path, driver='GPKG')
 adm2_gdf.geometry = adm2_gdf.geometry.buffer(0)
+adm2_gdf = adm2_gdf.loc[adm2_gdf.shapeID.notnull()].copy()
 
 china_gdf["adm2_id"] = china_gdf["geometry"].apply(lambda x: adm2_gdf[adm2_gdf.intersects(x)].shapeID.to_list())
 china_adm2_gdf = china_gdf.explode("adm2_id")
