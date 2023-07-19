@@ -68,8 +68,10 @@ china_adm1_gdf["intersection_ratio_committment_value"] = china_adm1_gdf["interse
 china_adm1_gdf["even_split_ratio_committment_value"] = china_adm1_gdf["even_split_ratio"] * china_adm1_gdf[value_field]
 china_adm1_gdf.drop(columns=[value_field], inplace=True)
 
-china_adm1_gdf.to_file(adm_data_dir / "china_adm1.gpkg", driver="GPKG")
-china_adm1_gdf[[i for i in china_adm1_gdf.columns if i != "geometry"]].to_csv(adm_data_dir / "china_adm1.csv", index=False)
+if not dry_run:
+    china_adm1_gdf.to_file(adm_data_dir / "china_adm1.gpkg", driver="GPKG")
+    china_adm1_gdf[[i for i in china_adm1_gdf.columns if i != "geometry"]].to_csv(adm_data_dir / "china_adm1.csv", index=False)
+
 
 
 adm2_gdf = gpd.read_file(adm2_dst_path, driver='GPKG')
@@ -104,5 +106,30 @@ china_adm2_gdf["intersection_ratio_committment_value"] = china_adm2_gdf["interse
 china_adm2_gdf["even_split_ratio_committment_value"] = china_adm2_gdf["even_split_ratio"] * china_adm2_gdf[value_field]
 china_adm2_gdf.drop(columns=[value_field], inplace=True)
 
-china_adm2_gdf.to_file(adm_data_dir / "china_adm2.gpkg", driver="GPKG")
-china_adm2_gdf[[i for i in china_adm2_gdf.columns if i != "geometry"]].to_csv(adm_data_dir / "china_adm2.csv", index=False)
+if not dry_run:
+    china_adm2_gdf.to_file(adm_data_dir / "china_adm2.gpkg", driver="GPKG")
+    china_adm2_gdf[[i for i in china_adm2_gdf.columns if i != "geometry"]].to_csv(adm_data_dir / "china_adm2.csv", index=False)
+
+
+
+# -------------------------------------
+# genearte crude hierarchy of adm1/adm2 units
+
+project_filtered_adm1_gdf = adm1_gdf.loc[adm1_gdf.shapeID.isin(list(china_adm1_gdf.shapeID.unique()))].copy()
+project_filtered_adm1_gdf = project_filtered_adm1_gdf[["shapeID", "shapeName", "shapeGroup", "geometry"]].copy()
+
+project_filtered_adm2_gdf = adm2_gdf.loc[adm2_gdf.shapeID.isin(list(china_adm2_gdf.shapeID.unique()))].copy()
+project_filtered_adm2_gdf = project_filtered_adm2_gdf[["shapeID", "shapeName", "shapeGroup", "geometry"]].copy()
+
+project_filtered_adm2_centroid_gdf = project_filtered_adm2_gdf.copy()
+project_filtered_adm2_centroid_gdf["geometry"] = project_filtered_adm2_gdf["geometry"].centroid
+
+
+x = gpd.sjoin(project_filtered_adm1_gdf, project_filtered_adm2_gdf, how="inner", predicate="intersects", lsuffix="adm1", rsuffix="adm2")
+
+y = x.merge(project_filtered_adm2_gdf[["shapeID", "geometry"]], left_on="shapeID_adm2", right_on="shapeID", suffixes=("", "_adm2"), how="inner")
+y["intersection_ratio"] = y["geometry"].intersection(y["geometry_adm2"]).area / y["geometry_adm2"].area
+y["country_agree"] = y["shapeGroup_adm1"] == y["shapeGroup_adm2"]
+
+z = y[[i for i in y.columns if i not in ["geometry", "geometry_adm2"]]].copy()
+z.to_csv(adm_data_dir / "adm1_adm2_hierarchy.csv", index=False)
