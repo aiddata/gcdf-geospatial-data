@@ -74,7 +74,7 @@ At AidData we believe in transparency and making our work replicable. In this se
 
 The code in this repository utilizes a combination of webscrapping, APIs, and geospatial processing to extract geospatial features from OpenStreeMap (OSM) URLs which detail either OSM features or driving directions. Python is used for all primary processing (Shell scripts are also used to initialize parallel jobs and manage repository files) and has been tested with packages and dependencies managed by Anaconda (see section on setting up environment below). All code can be run on a local environment using a single process or by leveraging parallel processing (implemented using both [concurrent futures](https://docs.python.org/3/library/concurrent.futures.html), as well as [mpi4py](https://github.com/mpi4py/mpi4py) on [William & Mary's HPC](https://www.wm.edu/offices/it/services/researchcomputing/atwm/index.php)), which will substantially reduce the amount of time needed to run.
 
-Python webscrapping is dependent on [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) and [Selenium](https://selenium-python.readthedocs.io/), and access to the OSM Overpass API leverages the [Overpass API Python wrapper](https://github.com/mvexel/overpass-api-python-wrapper). Additional geospatial processing and data management utilizes [Shapely](https://shapely.readthedocs.io/en/stable/manual.html), [osm2geojson](https://github.com/aspectumapp/osm2geojson), and [Pandas](https://pandas.pydata.org/).
+Python webscrapping is dependent on [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) and [Selenium](https://selenium-python.readthedocs.io/), and access to the OSM Overpass API leverages the [Overpass API Python wrapper](https://github.com/mvexel/overpass-api-python-wrapper). Additional geospatial processing and data management utilizes [Shapely](https://shapely.readthedocs.io/en/stable/manual.html), [osm2geojson](https://github.com/aspectumapp/osm2geojson) (we use a fork of osm2geojson modified for specific issues), and [Pandas](https://pandas.pydata.org/).
 
 Project data prepared using AidData's TUFF (Tracking Underreport Financial Flows) methodology serves an input and contains text descriptions, incuding OSM URLs, of locations associated with Chinese financed projects which are identified by a unique "AidData Tuff Project ID". For each project, OSM URLs are extracted (projects may have zero or multiple OSM URLs) and converted into geospatial features one of multiple approaches, and saved as a GeoJSON. Features described using OSM's [nodes](https://wiki.openstreetmap.org/wiki/Node) or [ways](https://wiki.openstreetmap.org/wiki/Way) - typically points, lines, and simple polygons - are scrapped directly from OSM URLs by extracting coordinates. More complex features such as mulitpolygons represented by OSM's [relations](https://wiki.openstreetmap.org/wiki/Relation)are retrieved using the Overpass API. Finally, OSM URLs containing custom driving directions between two points utilize the Selenium webdriver to extract [SVG path](https://www.w3.org/TR/SVG/paths.html) details from map tiles which are then converted to geospatial features.
 
@@ -104,7 +104,8 @@ For the easiest setup, we strongly suggest using Conda and following the steps b
 conda create -n china_osm python=3.9
 conda activate china_osm
 conda install -c conda-forge bs4 shapely pandas geopandas selenium==3.141.0 openpyxl conda-build
-pip install osm2geojson==0.1.29 overpass
+pip install overpass
+pip install git+https://github.com/jacobwhall/osm2geojson
 pip install prefect==2.2.0 prefect-dask==0.1.2 bokeh>=2.1.1
 ```
 
