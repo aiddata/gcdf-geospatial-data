@@ -64,9 +64,11 @@ project_adm1_counts = china_adm1_gdf.groupby("id").size().reset_index(name="adm_
 project_adm1_counts["even_split_ratio"] = 1 / project_adm1_counts["adm_count"]
 china_adm1_gdf = china_adm1_gdf.merge(project_adm1_counts[["id", "even_split_ratio"]], on="id")
 china_adm1_gdf[value_field] = china_adm1_gdf[value_field].astype(float)
-china_adm1_gdf["intersection_ratio_committment_value"] = china_adm1_gdf["intersection_ratio"] * china_adm1_gdf[value_field]
-china_adm1_gdf["even_split_ratio_committment_value"] = china_adm1_gdf["even_split_ratio"] * china_adm1_gdf[value_field]
+china_adm1_gdf["intersection_ratio_commitment_value"] = china_adm1_gdf["intersection_ratio"] * china_adm1_gdf[value_field]
+china_adm1_gdf["even_split_ratio_commitment_value"] = china_adm1_gdf["even_split_ratio"] * china_adm1_gdf[value_field]
 china_adm1_gdf.drop(columns=[value_field], inplace=True)
+
+china_adm1_gdf = china_adm1_gdf[["id", "shapeID", "shapeGroup", "shapeName", "intersection_ratio", "even_split_ratio", "intersection_ratio_commitment_value", "even_split_ratio_commitment_value","centroid_longitude", "centroid_latitude"]]
 
 if not dry_run:
     china_adm1_gdf.to_file(adm_data_dir / "china_adm1.gpkg", driver="GPKG")
@@ -102,9 +104,11 @@ project_adm2_counts = china_adm2_gdf.groupby("id").size().reset_index(name="adm_
 project_adm2_counts["even_split_ratio"] = 1 / project_adm2_counts["adm_count"]
 china_adm2_gdf = china_adm2_gdf.merge(project_adm2_counts[["id", "even_split_ratio"]], on="id")
 china_adm2_gdf[value_field] = china_adm2_gdf[value_field].astype(float)
-china_adm2_gdf["intersection_ratio_committment_value"] = china_adm2_gdf["intersection_ratio"] * china_adm2_gdf[value_field]
-china_adm2_gdf["even_split_ratio_committment_value"] = china_adm2_gdf["even_split_ratio"] * china_adm2_gdf[value_field]
+china_adm2_gdf["intersection_ratio_commitment_value"] = china_adm2_gdf["intersection_ratio"] * china_adm2_gdf[value_field]
+china_adm2_gdf["even_split_ratio_commitment_value"] = china_adm2_gdf["even_split_ratio"] * china_adm2_gdf[value_field]
 china_adm2_gdf.drop(columns=[value_field], inplace=True)
+
+china_adm2_gdf = china_adm2_gdf[["id", "shapeID", "shapeGroup", "shapeName", "intersection_ratio", "even_split_ratio", "intersection_ratio_commitment_value", "even_split_ratio_commitment_value","centroid_longitude", "centroid_latitude"]]
 
 if not dry_run:
     china_adm2_gdf.to_file(adm_data_dir / "china_adm2.gpkg", driver="GPKG")
