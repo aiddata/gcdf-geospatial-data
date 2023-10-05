@@ -552,6 +552,8 @@ def generate_svg_paths(feature_prep_df, overwrite=False, upper_limit=False, npro
         if len(task_list) < nprocs:
             nprocs = len(task_list)
 
+        print("Generating SVG paths for {} tasks with {} processes".format(len(task_list), nprocs))
+
         if nprocs > 1:
 
             with mp.Pool(nprocs, initializer=create_web_driver) as pool:
