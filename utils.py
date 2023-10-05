@@ -938,7 +938,15 @@ def get_osm_feat(task, checkpoint_dir=None):
         if soup == -1:
             return (unique_id, None, 'invalid url')
 
-        deleted = soup.find(text=re.compile('Deleted')) is not None
+        # Example of deleted feature: https://www.openstreetmap.org/way/23319192
+        # Example of valid feature with deleted in changeset comments: https://www.openstreetmap.org/relation/12733706
+        deleted_match = soup.find(text=re.compile('Deleted'))
+
+        deleted = False
+        if deleted_match is not None:
+            deleted_clean = deleted_match.replace('\n', '').strip()
+            if deleted_clean == "Deleted":
+                deleted = True
 
         if deleted:
             return (unique_id, None, 'deleted')
