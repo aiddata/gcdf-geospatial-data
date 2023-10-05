@@ -327,12 +327,15 @@ print("Building GeoJSONs")
 valid_df['feature'] = valid_df['feature'].apply(lambda x: shapely.wkt.loads(x) if isinstance(x, str) else x)
 valid_df['original_feature'] = valid_df['original_feature'].apply(lambda x: shapely.wkt.loads(x) if isinstance(x, str) else x)
 
+# group a project's features into a single multipolygon
 grouped_df = utils.prepare_multipolygons(valid_df)
 
+# assign path for grouped project features to be output to
+#   *** these are the primary project level individual geojson files ***
 grouped_df["geojson_path"] = grouped_df.id.apply(lambda x: output_dir / "geojsons" / f"{x}.geojson")
 
 # join original project fields back to be included in geojson properties
-grouped_df = grouped_df.merge(input_data_df, on='id', how="left")
+grouped_df = grouped_df.merge(input_data_df[['id'] + individual_project_fields], on='id', how="left")
 
 # create individual geojsons
 for ix, row in grouped_df.iterrows():
