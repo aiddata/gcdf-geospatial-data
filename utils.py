@@ -10,6 +10,7 @@ import functools
 import re
 import multiprocessing as mp
 import shutil
+import zipfile
 
 import numpy as np
 import fiona
@@ -1088,11 +1089,21 @@ def export_combined_data(combined_gdf, output_dir):
 
     combined_gdf.to_file(output_dir / "all_combined_global.geojson", driver="GeoJSON")
 
+    gpkg_path = output_dir / "all_combined_global.gpkg"
+    combined_gdf.to_file(gpkg_path, driver="GPKG")
+    with zipfile.ZipFile(f"{gpkg_path}.zip","w", zipfile.ZIP_DEFLATED) as zipf:
+        zipf.write(gpkg_path)
+
+    # combined_gdf.to_file(output_dir / "all_combined_global.topojson", driver="TopoJSON")
+
     # export all combined GeoJSON and a subset for each finance type
-    for i in set(combined_gdf.finance_type):
-        print(i)
-        subgrouped_df = combined_gdf[combined_gdf.finance_type == i].copy()
-        subgrouped_df.to_file(output_dir / f"{i}_combined_global.geojson", driver="GeoJSON")
+    if by_finance_type:
+        for i in set(combined_gdf.finance_type):
+            print(i)
+            subgrouped_df = combined_gdf[combined_gdf.finance_type == i].copy()
+            subgrouped_df.to_file(output_dir / f"{i}_combined_global.geojson", driver="GeoJSON")
+            subgrouped_df.to_file(output_dir / f"{i}_combined_global.gpkg", driver="GPKG")
+            # subgrouped_df.to_file(output_dir / f"{i}_combined_global.topojson", driver="TopoJSON")
 
     # create final csv
     final_drop_cols = ['geometry']
