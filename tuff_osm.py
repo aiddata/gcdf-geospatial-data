@@ -20,6 +20,7 @@ import zipfile
 import shapely.wkt
 import pandas as pd
 import geopandas as gpd
+from shapely.geometry import GeometryCollection
 
 from prefect import flow
 from prefect.task_runners import SequentialTaskRunner, ConcurrentTaskRunner
@@ -162,6 +163,10 @@ utils.save_df(svg_feature_prep_df, feature_prep_df_path)
 
 # print out svg gen errors and create separate df without errors?
 feature_prep_df = svg_feature_prep_df[svg_feature_prep_df['svg_path'] != "error"].copy()
+
+# feature_prep_df.loc[feature_prep_df.id.isin([37542, 65899, 66385, 72681]), "feature"]
+# feature_prep_df.loc[feature_prep_df.feature == "GEOMETRYCOLLECTION EMPTY", "feature"] = None
+
 
 if prepare_only:
     print(f'Dataset prep complete: {timestamp}')
