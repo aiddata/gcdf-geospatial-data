@@ -1005,12 +1005,15 @@ def prepare_multipolygons(valid_df):
     #    - iterate over all polygons (p) within feature multipolygons (mp) to create single multipolygon per project
 
     grouped_df = valid_df.groupby("id")["feature"].apply(list).reset_index(name="feature_list")
+    grouped_df = valid_df.groupby("id").agg({"feature": list, "osm_link": list, "osm_precision": list}).reset_index()
+    grouped_df.rename(columns={"feature": "feature_list", "osm_link": "osm_links", "osm_precision": "osm_precision_list"}, inplace=True)
     # for group in grouped_df:
     #     group_mp = MultiPolygon([p for mp in group.feature for p in mp]).__geo_interface_
     # move this to apply instead of loop so we can have a final df to output results/errors to
     grouped_df["multipolygon"] = grouped_df.feature_list.apply(lambda mp_list: unary_union([p for mp in mp_list for p in mp.geoms]))
     grouped_df["multipolygon"] = grouped_df.multipolygon.apply(lambda x: MultiPolygon([x]) if x.geom_type == "Polygon" else x)
     grouped_df["feature_count"] = grouped_df.feature_list.apply(lambda mp: len(mp))
+    grouped_df.drop(columns=["feature_list"], inplace=True)
     return grouped_df
 
 
