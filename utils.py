@@ -263,7 +263,11 @@ def clean_osm_link(link, version=None):
 
     # extract if link is for a way, node, relation, directions
     if not link.startswith(("http://", "https://")):
-        link = "https://" + link
+        if "http" in link:
+            link = link[link.index("http"):]
+        else:
+            link = "https://" + link
+
 
     osm_type = link.split("/")[3].split("?")[0]
 
