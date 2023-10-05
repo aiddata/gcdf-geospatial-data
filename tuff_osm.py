@@ -344,7 +344,13 @@ for ix, row in grouped_df.iterrows():
 
 # -------
 
-original_feature_df = valid_df[["id", "original_feature", "osm_precision"]].copy()
+# This first saved the original features as individual geojsons (e.g., original point, line, polygon)
+# and then groups features by feature type (e.g., a file for all points, a file for all lines, etc.).
+# These are saved to the "osm_geojsons" directory under "individual" and "grouped" respectively.
+# Note: the truly raw features are cached by osm id in the "osm_geojsons" directory under "cache".
+# Note: These are minimalistic for advanced users, and do not include any non-essential project fields. Users must join in that data themselves if needed.
+
+original_feature_df = valid_df[["id", "original_feature", "osm_link", "osm_precision"]].copy()
 
 original_feature_df["geojson_path"] = original_feature_df.id.apply(lambda x: output_dir / "osm_geojsons" / "individual" / f"{x}.geojson")
 
