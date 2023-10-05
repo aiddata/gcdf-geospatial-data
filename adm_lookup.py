@@ -3,25 +3,38 @@
 import requests
 from pathlib import Path
 
+import pandas as pd
 import geopandas as gpd
 
 
-dry_run = True
+dry_run = False
 intersection_threshold = 0.0001
 
+output_tag = "gcdf_v3"
 
-dataset_path = "/home/userx/Desktop/tuff_osm/output_data/3.0test2021/results/2023_07_11_16_53/all_combined_global.geojson"
-value_field = "Amount (Constant USD2021)"
-china_gdf = gpd.read_file(dataset_path)
+dataset_path = "/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/2023_10_05_11_52/all_combined_global.gpkg"
 
-# china_gdf = china_gdf.loc[china_gdf.id ==97577]
+project_data_path = "/home/userx/Desktop/tuff_osm/input_data/gcdf_v3/cdf2021.csv"
+value_field = "Amount.(Constant.USD2021)"
+# id_field = "AidData Tuff Project ID"
 
-adm_data_dir = Path("/home/userx/Desktop/tuff_osm/gb_v5")
+# geo_gdf = gpd.read_file(dataset_path)
+# project_df = pd.read_csv(project_data_path)
+# project_df = project_df[[id_field, value_field]]
+
+# china_gdf = geo_gdf.merge(project_df, left_on="id", right_on=id_field, how="left")
+
+raw_china_gdf = gpd.read_file(dataset_path)
+
+# =====================================
+# init and download adm data if needed
+
+adm_data_dir = Path("/home/userx/Desktop/tuff_osm/gb_v6")
 adm_data_dir.mkdir(parents=True, exist_ok=True)
 
-# gb v5 release
-adm1_cgaz_path = f"https://github.com/wmgeolab/geoBoundaries/raw/b7dd6a55701c76a330500ad9d9240f2b9997c6a8/releaseData/CGAZ/geoBoundariesCGAZ_ADM1.gpkg"
-adm2_cgaz_path = f"https://github.com/wmgeolab/geoBoundaries/raw/b7dd6a55701c76a330500ad9d9240f2b9997c6a8/releaseData/CGAZ/geoBoundariesCGAZ_ADM2.gpkg"
+# gb v6 release
+adm1_cgaz_path = f"https://github.com/wmgeolab/geoBoundaries/raw/main/releaseData/CGAZ/geoBoundariesCGAZ_ADM1.gpkg"
+adm2_cgaz_path = f"https://github.com/wmgeolab/geoBoundaries/raw/main/releaseData/CGAZ/geoBoundariesCGAZ_ADM2.gpkg"
 
 adm1_dst_path = adm_data_dir / f"geoBoundariesCGAZ_ADM1.gpkg"
 adm2_dst_path = adm_data_dir / f"geoBoundariesCGAZ_ADM2.gpkg"
@@ -33,16 +46,96 @@ def download_file(url, dst):
 
 if not adm1_dst_path.exists():
     download_file(adm1_cgaz_path, adm1_dst_path)
+
 if not adm2_dst_path.exists():
     download_file(adm2_cgaz_path, adm2_dst_path)
+
+# =====================================
+# load adm data
 
 adm1_gdf = gpd.read_file(adm1_dst_path, driver='GPKG')
 adm1_gdf.geometry = adm1_gdf.geometry.buffer(0)
 adm1_gdf = adm1_gdf.loc[adm1_gdf.shapeID.notnull()].copy()
 
-china_gdf["adm1_id"] = china_gdf["geometry"].apply(lambda x: adm1_gdf[adm1_gdf.intersects(x)].shapeID.to_list())
-china_adm1_gdf = china_gdf.explode("adm1_id")
-china_adm1_gdf.rename(columns={"adm1_id": "shapeID"}, inplace=True)
+adm2_gdf = gpd.read_file(adm2_dst_path, driver='GPKG')
+adm2_gdf.geometry = adm2_gdf.geometry.buffer(0)
+adm2_gdf = adm2_gdf.loc[adm2_gdf.shapeID.notnull()].copy()
+
+
+# =====================================
+
+# for missing projects, buffer incrementally and run again until they intersect,
+# making a note in field of buffer size needed to intersect and
+# returning buffered geometry to use for intersections later
+def adm_lookup(project_gdf, adm_gdf, buffer_size=0, max_buffer_size=0.2):
+    # print(f"Count: {len(project_gdf)}")
+    # print(f"Buffer size: {buffer_size}")
+    project_gdf["buffer_size"] = buffer_size
+    project_gdf["geometry"] = project_gdf["geometry"].buffer(buffer_size)
+    project_gdf["adm_id"] = project_gdf["geometry"].apply(lambda x: adm_gdf[adm_gdf.intersects(x)].shapeID.to_list())
+    valid_gdf = project_gdf.loc[project_gdf.adm_id.apply(lambda x: len(x) > 0)].copy()
+    missing_adm_ids = project_gdf.loc[project_gdf.adm_id.apply(lambda x: len(x) == 0), 'id'].to_list()
+    if len(missing_adm_ids) == 0:
+        return valid_gdf
+    else:
+        missing_gdf = project_gdf.loc[project_gdf.id.isin(missing_adm_ids)][["id", "geometry"]].copy()
+        if buffer_size >= max_buffer_size:
+            final_gdf = pd.concat([valid_gdf, missing_gdf])
+        else:
+            missing_gdf = project_gdf.loc[project_gdf.id.isin(missing_adm_ids)][["id", "geometry"]].copy()
+            solved_gdf = adm_lookup(missing_gdf, adm_gdf, buffer_size=buffer_size+0.025)
+            final_gdf = pd.concat([valid_gdf, solved_gdf])
+        return final_gdf
+
+
+
+base_china_adm1_gdf = raw_china_gdf[["id", value_field, "geometry"]].copy()
+matched_china_adm1_gdf = adm_lookup(base_china_adm1_gdf.copy(), adm1_gdf)
+matched_china_adm1_gdf.loc[matched_china_adm1_gdf.buffer_size != 0][["id", "geometry", "buffer_size"]].to_file(adm_data_dir / f"{output_tag}_adm1_buffered.gpkg", driver="GPKG")
+
+
+base_china_adm2_gdf = raw_china_gdf[["id", value_field, "geometry"]].copy()
+matched_china_adm2_gdf = adm_lookup(base_china_adm2_gdf.copy(), adm2_gdf)
+matched_china_adm2_gdf.loc[matched_china_adm2_gdf.buffer_size != 0][["id", "geometry", "buffer_size"]].to_file(adm_data_dir / f"{output_tag}_adm2_buffered.gpkg", driver="GPKG")
+
+
+# =====================================
+# summarize buffered/missing projects for adm1/adm2
+
+
+buffer_summary = f"""
+
+Project Count: {len(raw_china_gdf)}
+
+ADM1:
+\t No buffer needed: {len(matched_china_adm1_gdf.loc[matched_china_adm1_gdf.buffer_size == 0])}
+\t <=5km buffer: {len(matched_china_adm1_gdf.loc[(matched_china_adm1_gdf.buffer_size <= 0.05) & (matched_china_adm1_gdf.buffer_size > 0)])}
+\t >5km buffer: {len(matched_china_adm1_gdf.loc[(matched_china_adm1_gdf.buffer_size > 0.05)])}
+\t No match with max buffer: {len(matched_china_adm1_gdf.loc[matched_china_adm1_gdf.buffer_size.isna()])}
+
+
+
+ADM2:
+\t No buffer needed: {len(matched_china_adm2_gdf.loc[matched_china_adm2_gdf.buffer_size == 0])}
+\t <=5km buffer: {len(matched_china_adm2_gdf.loc[(matched_china_adm2_gdf.buffer_size <= 0.05) & (matched_china_adm1_gdf.buffer_size > 0)])}
+\t >5km buffer: {len(matched_china_adm2_gdf.loc[(matched_china_adm2_gdf.buffer_size > 0.05)])}
+\t No match with max buffer: {len(matched_china_adm2_gdf.loc[matched_china_adm2_gdf.buffer_size.isna()])}
+
+"""
+
+print(buffer_summary)
+
+with open(adm_data_dir / f"{output_tag}_buffer_summary.txt", "w") as f:
+    f.write(buffer_summary)
+
+
+
+
+# =====================================
+# run adm1
+
+china_adm1_gdf = matched_china_adm1_gdf.explode("adm_id")
+china_adm1_gdf.rename(columns={"adm_id": "shapeID"}, inplace=True)
 china_adm1_gdf = china_adm1_gdf[["id", value_field, "geometry", "shapeID"]].copy()
 china_adm1_gdf = china_adm1_gdf.merge(adm1_gdf, on="shapeID", suffixes=("", "_adm1"))
 china_adm1_gdf["intersection_ratio"] = china_adm1_gdf["geometry"].intersection(china_adm1_gdf["geometry_adm1"]).area / china_adm1_gdf["geometry"].area
@@ -68,21 +161,18 @@ china_adm1_gdf["intersection_ratio_commitment_value"] = china_adm1_gdf["intersec
 china_adm1_gdf["even_split_ratio_commitment_value"] = china_adm1_gdf["even_split_ratio"] * china_adm1_gdf[value_field]
 china_adm1_gdf.drop(columns=[value_field], inplace=True)
 
-china_adm1_gdf = china_adm1_gdf[["id", "shapeID", "shapeGroup", "shapeName", "intersection_ratio", "even_split_ratio", "intersection_ratio_commitment_value", "even_split_ratio_commitment_value","centroid_longitude", "centroid_latitude"]]
+china_adm1_gdf = china_adm1_gdf[["id", "shapeID", "shapeGroup", "shapeName", "intersection_ratio", "even_split_ratio", "intersection_ratio_commitment_value", "even_split_ratio_commitment_value", "centroid_longitude", "centroid_latitude", "geometry"]]
+
 
 if not dry_run:
-    china_adm1_gdf.to_file(adm_data_dir / "china_adm1.gpkg", driver="GPKG")
-    china_adm1_gdf[[i for i in china_adm1_gdf.columns if i != "geometry"]].to_csv(adm_data_dir / "china_adm1.csv", index=False)
+    china_adm1_gdf.to_file(adm_data_dir / f"{output_tag}_adm1.gpkg", driver="GPKG")
+    china_adm1_gdf[[i for i in china_adm1_gdf.columns if i != "geometry"]].to_csv(adm_data_dir / f"{output_tag}_adm1.csv", index=False)
 
+# =====================================
+# run adm2
 
-
-adm2_gdf = gpd.read_file(adm2_dst_path, driver='GPKG')
-adm2_gdf.geometry = adm2_gdf.geometry.buffer(0)
-adm2_gdf = adm2_gdf.loc[adm2_gdf.shapeID.notnull()].copy()
-
-china_gdf["adm2_id"] = china_gdf["geometry"].apply(lambda x: adm2_gdf[adm2_gdf.intersects(x)].shapeID.to_list())
-china_adm2_gdf = china_gdf.explode("adm2_id")
-china_adm2_gdf.rename(columns={"adm2_id": "shapeID"}, inplace=True)
+china_adm2_gdf = matched_china_adm2_gdf.explode("adm_id")
+china_adm2_gdf.rename(columns={"adm_id": "shapeID"}, inplace=True)
 china_adm2_gdf = china_adm2_gdf[["id", value_field, "geometry", "shapeID"]].copy()
 china_adm2_gdf = china_adm2_gdf.merge(adm2_gdf, on="shapeID", suffixes=("", "_adm2"))
 china_adm2_gdf["intersection_ratio"] = china_adm2_gdf["geometry"].intersection(china_adm2_gdf["geometry_adm2"]).area / china_adm2_gdf["geometry"].area
@@ -108,15 +198,14 @@ china_adm2_gdf["intersection_ratio_commitment_value"] = china_adm2_gdf["intersec
 china_adm2_gdf["even_split_ratio_commitment_value"] = china_adm2_gdf["even_split_ratio"] * china_adm2_gdf[value_field]
 china_adm2_gdf.drop(columns=[value_field], inplace=True)
 
-china_adm2_gdf = china_adm2_gdf[["id", "shapeID", "shapeGroup", "shapeName", "intersection_ratio", "even_split_ratio", "intersection_ratio_commitment_value", "even_split_ratio_commitment_value","centroid_longitude", "centroid_latitude"]]
+china_adm2_gdf = china_adm2_gdf[["id", "shapeID", "shapeGroup", "shapeName", "intersection_ratio", "even_split_ratio", "intersection_ratio_commitment_value", "even_split_ratio_commitment_value","centroid_longitude", "centroid_latitude", "geometry"]]
 
 if not dry_run:
-    china_adm2_gdf.to_file(adm_data_dir / "china_adm2.gpkg", driver="GPKG")
-    china_adm2_gdf[[i for i in china_adm2_gdf.columns if i != "geometry"]].to_csv(adm_data_dir / "china_adm2.csv", index=False)
+    china_adm2_gdf.to_file(adm_data_dir / f"{output_tag}_adm2.gpkg", driver="GPKG")
+    china_adm2_gdf[[i for i in china_adm2_gdf.columns if i != "geometry"]].to_csv(adm_data_dir / f"{output_tag}_adm2.csv", index=False)
 
 
-
-# -------------------------------------
+# =====================================
 # genearte crude hierarchy of adm1/adm2 units
 
 project_filtered_adm1_gdf = adm1_gdf.loc[adm1_gdf.shapeID.isin(list(china_adm1_gdf.shapeID.unique()))].copy()
@@ -135,5 +224,11 @@ y = x.merge(project_filtered_adm2_gdf[["shapeID", "geometry"]], left_on="shapeID
 y["intersection_ratio"] = y["geometry"].intersection(y["geometry_adm2"]).area / y["geometry_adm2"].area
 y["country_agree"] = y["shapeGroup_adm1"] == y["shapeGroup_adm2"]
 
-z = y[[i for i in y.columns if i not in ["geometry", "geometry_adm2"]]].copy()
-z.to_csv(adm_data_dir / "adm1_adm2_hierarchy.csv", index=False)
+z = y[[i for i in y.columns if i not in ["geometry", "geometry_adm2", "shapeID", "index_adm2"]]].copy()
+z = z.loc[z["country_agree"] == True].copy()
+z["shapeGroup"] = z["shapeGroup_adm1"]
+z.drop(columns=["shapeGroup_adm1", "shapeGroup_adm2", "country_agree"], inplace=True)
+
+z1 = z.sort_values('intersection_ratio', ascending=False).drop_duplicates(['shapeID_adm2'])
+
+z1.to_csv(adm_data_dir / f"{output_tag}_adm1_adm2_hierarchy.csv", index=False)
