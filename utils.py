@@ -1108,7 +1108,7 @@ def load_all_geojsons(output_dir):
     return combined_gdf
 
 
-def export_combined_data(combined_gdf, output_dir):
+def export_combined_data(combined_gdf, output_dir, by_finance_type=False):
 
     for c in combined_gdf.columns:
         if " Date " in c:
