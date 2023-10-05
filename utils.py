@@ -1059,7 +1059,8 @@ def generate_feature_properties(row):
         props["feature_count"] = row.feature_count
     for k,v in row.items():
         if k not in ['id', 'location', 'project_id', 'feature_list', 'feature_count', 'multipolygon', 'original_feature', 'geojson_path', 'geometry']:
-            if isinstance(v, type(pd.NaT)) or pd.isnull(v):
+            isnull = isinstance(v, type(pd.NaT)) or pd.isnull(v)
+            if isinstance(isnull, bool) and isnull or isinstance(isnull, list) and any(isnull):
                 v = None
             elif type(v) not in [int, str, float]:
                 v = str(v)
