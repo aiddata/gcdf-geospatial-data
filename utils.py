@@ -908,6 +908,7 @@ def buffer_osm_feat(fn):
 
 
 # @task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True)
+@task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True, timeout_seconds=10*60)
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
 def get_existing_osm_feat(unique_id, path):
@@ -917,7 +918,7 @@ def get_existing_osm_feat(unique_id, path):
 
 
 # @task(log_stdout=True, state_handlers=[handle_failure], task_run_name=lambda **kwargs: f"{kwargs['task'][1]}")
-@task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True)
+@task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True, timeout_seconds=10*60)
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
 def get_osm_feat(task, checkpoint_dir=None):
