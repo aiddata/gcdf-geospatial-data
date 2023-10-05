@@ -15,6 +15,7 @@ import itertools
 from pathlib import Path
 import time
 import shutil
+import zipfile
 
 import shapely.wkt
 import pandas as pd
@@ -316,12 +317,20 @@ for i in original_feature_df['id'].to_list():
     gdf = gpd.read_file(gj_path)
     gdf_list.append(gdf)
 
-combined_gdf = pd.concat(gdf_list)
-combined_gdf["feature_type"] = combined_gdf.geometry.apply(lambda x: x.type)
+osm_grouped_gdf = pd.concat(gdf_list)
+osm_grouped_gdf["feature_type"] = osm_grouped_gdf.geometry.apply(lambda x: x.type)
 
-for i in combined_gdf.feature_type.unique():
-    type_gdf = combined_gdf[combined_gdf.feature_type == i].copy()
-    type_gdf.to_file(output_dir / "osm_geojsons" / 'grouped' /  f"OSM_{i}.geojson", driver="GeoJSON")
+grouped_zip_path = output_dir / "osm_geojsons" / f"OSM_grouped.zip"
+zipf = zipfile.ZipFile(grouped_zip_path, "w", zipfile.ZIP_DEFLATED)
+
+for i in osm_grouped_gdf.feature_type.unique():
+    type_gdf = osm_grouped_gdf[osm_grouped_gdf.feature_type == i].copy()
+    type_gdf.drop(columns=["feature_type"], inplace=True)
+    type_grouped_path = output_dir / "osm_geojsons" / 'grouped' / f"OSM_{i}.geojson"
+    type_gdf.to_file(type_grouped_path, driver="GeoJSON")
+    zipf.write(type_grouped_path, arcname=f"OSM_{i}.geojson")
+
+zipf.close()
 
 
 # ==========================================================
