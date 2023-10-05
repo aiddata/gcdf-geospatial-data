@@ -211,6 +211,7 @@ def load_existing(existing_dir, link_df, use_existing_feature, use_only_existing
     elif existing_feature_prep_path.exists():
         # join svg_path col to current run
         existing_feature_prep_df = pd.read_csv(existing_feature_prep_path)
+
         svg_df = existing_feature_prep_df[['clean_link', 'svg_path']].loc[existing_feature_prep_df.svg_path.notnull()].copy()
         # deduplicate svg_df
         svg_df.drop_duplicates('clean_link', inplace=True)
@@ -873,7 +874,7 @@ def convert_osm_feat_to_multipolygon(fn):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         unique_id, feat, flag, raw_feat = fn(*args, **kwargs)
-        if feat and feat.type != "MultiPolygon":
+        if feat and feat.geom_type != "MultiPolygon":
             feat = MultiPolygon([feat])
         return unique_id, feat, flag, raw_feat
     return wrapper
@@ -891,7 +892,7 @@ def buffer_osm_feat(fn):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         unique_id, raw_feat, flag = fn(*args, **kwargs)
-        if raw_feat and raw_feat.type not in ["Polygon", "MultiPolygon"]:
+        if raw_feat and raw_feat.geom_type not in ["Polygon", "MultiPolygon"]:
             feat = raw_feat.buffer(0.00001)
         else:
             feat = raw_feat
@@ -996,7 +997,7 @@ def prepare_multipolygons(valid_df):
     #     group_mp = MultiPolygon([p for mp in group.feature for p in mp]).__geo_interface_
     # move this to apply instead of loop so we can have a final df to output results/errors to
     grouped_df["multipolygon"] = grouped_df.feature_list.apply(lambda mp_list: unary_union([p for mp in mp_list for p in mp.geoms]))
-    grouped_df["multipolygon"] = grouped_df.multipolygon.apply(lambda x: MultiPolygon([x]) if x.type == "Polygon" else x)
+    grouped_df["multipolygon"] = grouped_df.multipolygon.apply(lambda x: MultiPolygon([x]) if x.geom_type == "Polygon" else x)
     grouped_df["feature_count"] = grouped_df.feature_list.apply(lambda mp: len(mp))
     return grouped_df
 
