@@ -929,7 +929,10 @@ def get_osm_feat(task, checkpoint_dir=None):
     # logger.info(clean_link)
 
     if osm_type == "directions":
-        feat = get_directions_geom(clean_link, svg_path)
+        try:
+            feat = get_directions_geom(clean_link, svg_path)
+        except ZeroDivisionError:
+            return (unique_id, None, 'zero division error')
     else:
         soup = get_soup(clean_link)
         if soup == -1:
