@@ -388,6 +388,10 @@ def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None, enfo
         # invalid osm links can be referenced later for fixes
         link_df.to_csv(link_df_path, index=False, encoding="utf-8")
 
+        invalid_link_df_path = output_dir / "osm_links_invalid.csv"
+
+        link_df.loc[~link_df.valid].to_csv(invalid_link_df_path, index=False, encoding="utf-8")
+
     return link_df
 
 
