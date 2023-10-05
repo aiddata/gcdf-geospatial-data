@@ -157,6 +157,8 @@ if from_existing:
 
 
 # option to sample data for testing; sample size <=0 returns full dataset
+# NOTE: sampling does not attempt to make sure all links (rows in link_df) associated with a project are included together, so you may get "partial" projects. This is fine for testing the code, but not for validating the geocoding/data.
+# TODO: possibly add a mode to allow sampling of full projects
 sampled_feature_prep_df = utils.sample_and_validate(link_df, sample_size=sample_size, summary=True)
 
 # TODO: deduplicate svg links before processing
@@ -235,56 +237,84 @@ def osm_features_flow(flow_task_list, overwrite=False):
         osm_id = i[3]
         cache_path = output_dir / "osm_geojsons"/ "cache" / f"{osm_id}.geojson"
         if i[2] != "directions" and not overwrite and os.path.exists(cache_path):
-            osm_feat = utils.get_existing_osm_feat(i[0], cache_path)
+            osm_feat = utils.get_existing_osm_feat.submit(i[0], cache_path)
+            time.sleep(0.5)
         else:
             osm_feat = utils.get_osm_feat.submit(i, checkpoint_dir=output_dir/"osm_geojsons"/"cache")
-        time.sleep(0.1)
+            time.sleep(0.2)
         task_results.append(osm_feat)
 
     results_df = utils.process.submit(task_results, task_list, task_results_path)
     return results_df.result()
 
 overwrite = not use_existing_raw_osm
-raw_results_df = osm_features_flow(unique_task_list, overwrite=overwrite)
+
+
+if len(unique_task_list) > 0:
+
+    # raw_results_df_old = osm_features_flow(unique_task_list, overwrite=overwrite)
+
+    chop_size = 1000
+    tmp_raw_results_df_list = []
+    for i in range(0, len(unique_task_list), chop_size):
+        print (f"Processing tasks {i} to {i+chop_size} out of {len(unique_task_list)}")
+        subset_unique_task_list = unique_task_list[i:i+chop_size]
+        tmp_raw_results_df = osm_features_flow(subset_unique_task_list, overwrite=overwrite)
+        tmp_raw_results_df_list.append(tmp_raw_results_df)
+
+    raw_results_df = pd.concat(tmp_raw_results_df_list)
 
 
 
 # ==========================================================
 
-# rebuild original task list to populate results for duplicate tasks
-results_df = raw_results_df.merge(active_task_df[['unique_id', 'clean_link']], on='unique_id', how='left')
-results_df.drop(columns=['unique_id'], inplace=True)
-results_df = active_task_df[['unique_id', 'clean_link']].merge(results_df, on='clean_link', how='left')
-results_df.drop(columns=['clean_link'], inplace=True)
+if len(unique_task_list) > 0:
 
-# join processing results with existing data and validate results
-output_df = feature_prep_df.merge(results_df, on="unique_id", how="left")
-output_df['feature'] = output_df['feature_x'].where(output_df['feature_x'].notnull(), output_df['feature_y'])
-output_df['flag'] = output_df['flag_x'].where(output_df['flag_x'].notnull(), output_df['flag_y'])
-output_df.drop(columns=['feature_x', 'feature_y', 'flag_x', 'flag_y',], inplace=True)
-if "original_feature_x" in output_df.columns:
-    output_df['original_feature'] = output_df['original_feature_x'].where(output_df['original_feature_x'].notnull(), output_df['original_feature_y'])
-    output_df.drop(columns=['original_feature_x', 'original_feature_y'], inplace=True)
+    # rebuild original task list to populate results for duplicate tasks
+    results_df = raw_results_df.merge(active_task_df[['unique_id', 'clean_link']], on='unique_id', how='left')
+    results_df.drop(columns=['unique_id'], inplace=True)
+    results_df = active_task_df[['unique_id', 'clean_link']].merge(results_df, on='clean_link', how='left')
+    results_df.drop(columns=['clean_link'], inplace=True)
 
+    # join processing results with existing data and validate results
+    output_df = feature_prep_df.merge(results_df, on="unique_id", how="left")
+    output_df['feature'] = output_df['feature_x'].where(output_df['feature_x'].notnull(), output_df['feature_y'])
+    output_df['flag'] = output_df['flag_x'].where(output_df['flag_x'].notnull(), output_df['flag_y'])
+    output_df.drop(columns=['feature_x', 'feature_y', 'flag_x', 'flag_y',], inplace=True)
+    if "original_feature_x" in output_df.columns:
+        output_df['original_feature'] = output_df['original_feature_x'].where(output_df['original_feature_x'].notnull(), output_df['original_feature_y'])
+        output_df.drop(columns=['original_feature_x', 'original_feature_y'], inplace=True)
+
+    output_df.rename(columns={"osm_link": "raw_osm_link"}, inplace=True)
+    output_df["osm_link"] = output_df["clean_link"]
+
+else:
+
+    output_df = feature_prep_df.copy()
 
 # prepare data for next steps and csv outputs
+empty_geom = GeometryCollection()
+output_df.loc[output_df.feature == empty_geom, "flag"] = "GEOMETRYCOLLECTION EMPTY"
+output_df.loc[output_df.feature == empty_geom, "feature"] = None
 
 error_ids = output_df.loc[output_df.feature.isnull() & output_df.flag.notnull(), "id"]
 error_df = output_df.loc[output_df.id.isin(error_ids)].copy()
 error_df.loc[error_df.flag.isnull(), "flag"] = "valid feature in project with at least one other invalid feature"
 
-valid_df = output_df.loc[~output_df.id.isin(error_ids)].copy()
 
-unprocessed_df = output_df[output_df.feature.isnull() & output_df.flag.isnull()].copy()
+unprocessed_ids = output_df.loc[output_df.feature.isnull() & output_df.flag.isnull(), "id"]
+unprocessed_df = output_df.loc[output_df.id.isin(unprocessed_ids)].copy()
+unprocessed_df.loc[unprocessed_df.flag.isnull(), "flag"] = "unprocessed"
+# unprocessed_df = output_df[output_df.feature.isnull() & output_df.flag.isnull()].copy()
+
+valid_df = output_df.loc[~output_df.id.isin(error_ids) & ~output_df.id.isin(unprocessed_ids)].copy()
+
 
 print("\t{} errors found out of {} tasks ({} were not procesed)".format(len(error_ids), len(output_df), len(unprocessed_df)))
 utils.save_df(valid_df, processing_valid_path)
 utils.save_df(error_df, processing_errors_path)
 
 
-# drop_ids = [60926, 63257, 66521, 71512, 86628, 61435, 64147, 86765, 88887, 95851, 87179, 68443, 96242, 96288, 72759, 94779, 95515, 92032, 89173, 89308, 90985, 90993, 91041, 90320, 92693, 92694, 92695, 92712, 90407, 90833, 90367, 90586, 90716, 90848, 90919, 92998, 89182, 90717, 90718, 90723, 90631, 92254, 92734, 71304, 71320, 90871, 70512, 91158]
-# drop_ids = [95638] + drop_ids
-# valid_df = valid_df.loc[~valid_df.id.isin(drop_ids)].copy()
 
 # ==========================================================
 # turn raw feature data into fully formed features and geojsons
