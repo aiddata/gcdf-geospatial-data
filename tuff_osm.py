@@ -139,6 +139,11 @@ api = utils.init_overpass_api()
 # input_data_df = utils.load_input_data(base_dir, release_name, output_project_fields, id_field, location_field)
 input_data_df = utils.load_simple_input_data(base_dir, release_name, csv_name, output_project_fields, id_field, location_field, precision_field)
 
+duplicates_df = input_data_df.loc[input_data_df.duplicated('id', keep=False)]
+if len(duplicates_df) > 0:
+    duplicates_df.to_csv(output_dir / "duplicate.csv", index=False)
+    raise Exception(f"Duplicate ids found in input data: {duplicates_df.id.to_list()}")
+
 base_df = input_data_df[['id', 'location', 'version', 'precision']].copy()
 
 link_df = utils.get_osm_links(base_df, osm_str, invalid_str_list, output_dir=output_dir, enforce_precision=True)
