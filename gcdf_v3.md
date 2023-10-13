@@ -8,7 +8,20 @@
 ## Run main processing
 `python src/main.py`
 
-**Note the timestamp of the main processing run, as all subsequent scripts will need to be updated with this timestamp to use the correct output data**
+**Note the timestamp (e.g., 2023_10_12_13_22) of the main processing run, as all subsequent scripts will need to be updated with this timestamp to use the correct output data**
+
+### To publish a release candidate:
+1. Update run as latest `bash scripts/set_latest.sh gcdf_v3 2023_10_12_13_22`
+2. Commit changes and push to development GitHub repo (gcdf-geospatial-data-rc)
+3. Create a new release in the development GitHub repo
+4. Upload the `all_combined_global.gpkg.zip` and `osm_geojsons/OSM_grouped.zip` files to the release assets
+
+### To publish an official release:
+1. Create a PR on GitHub from the development repo to the production repo (gcdf-geospatial-data)
+2. Merge the PR
+3. Create a new release in the production GitHub repo
+4. Upload the `all_combined_global.gpkg.zip` and `osm_geojsons/OSM_grouped.zip` files to the release assets
+
 
 
 ## Prepare data to be joined into project level GCDF v3 dataset
