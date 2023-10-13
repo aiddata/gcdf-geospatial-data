@@ -361,7 +361,7 @@ def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None, enfo
 
     link_list_df['osm_count'] = link_list_df['osm_list'].apply(lambda x: len(x))
     link_list_df['precision_count'] = link_list_df['precision_list'].apply(lambda x: len(x))
-    # breakpoint()
+
     link_list_df.loc[(link_list_df.precision_count == 1) & (link_list_df.osm_count > 1), "precision_list"] = link_list_df.loc[(link_list_df.precision_count == 1) & (link_list_df.osm_count > 1)].apply(lambda x: fill_precision_list(x.osm_list, x.precision_list[0]), axis=1)
 
     link_list_df['precision_count'] = link_list_df['precision_list'].apply(lambda x: len(x))
@@ -925,7 +925,7 @@ def buffer_osm_feat(fn):
 
 
 # @task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True)
-@task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True, timeout_seconds=10*60)
+@task(name="get_existing_osm_feat", retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True, timeout_seconds=10*60)
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
 def get_existing_osm_feat(unique_id, path):
@@ -935,7 +935,7 @@ def get_existing_osm_feat(unique_id, path):
 
 
 # @task(log_stdout=True, state_handlers=[handle_failure], task_run_name=lambda **kwargs: f"{kwargs['task'][1]}")
-@task(retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True, timeout_seconds=10*60)
+@task(name="get_osm_feat", retries=5, retry_delay_seconds=60, tags=["osm_geo"], persist_result=True, timeout_seconds=10*60)
 @convert_osm_feat_to_multipolygon
 @buffer_osm_feat
 def get_osm_feat(task, checkpoint_dir=None):
@@ -995,7 +995,7 @@ def get_osm_feat(task, checkpoint_dir=None):
     return osm_feat
 
 
-@task(retries=5, retry_delay_seconds=5, persist_result=True)
+@task(name="process", retries=5, retry_delay_seconds=5, persist_result=True)
 def process(r, t, output_path):
     combined = zip(r, t)
     results = []
