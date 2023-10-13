@@ -2,6 +2,7 @@
 
 import requests
 from pathlib import Path
+import ast
 
 import pandas as pd
 import geopandas as gpd
@@ -25,6 +26,7 @@ value_field = "Amount.(Constant.USD2021)"
 # china_gdf = geo_gdf.merge(project_df, left_on="id", right_on=id_field, how="left")
 
 raw_china_gdf = gpd.read_file(dataset_path)
+raw_china_gdf.osm_precision_list = raw_china_gdf.osm_precision_list.apply(lambda x: list(set(ast.literal_eval(x))))
 
 # =====================================
 # init and download adm data if needed
@@ -94,7 +96,9 @@ matched_china_adm1_gdf = adm_lookup(base_china_adm1_gdf.copy(), adm1_gdf)
 matched_china_adm1_gdf.loc[matched_china_adm1_gdf.buffer_size != 0][["id", "geometry", "buffer_size"]].to_file(adm_data_dir / f"{output_tag}_adm1_buffered.gpkg", driver="GPKG")
 
 
-base_china_adm2_gdf = raw_china_gdf[["id", value_field, "geometry"]].copy()
+base_china_adm2_gdf = raw_china_gdf.loc[raw_china_gdf.osm_precision_list.apply(lambda x: all([i not in x for i in ('adm0', 'adm1', 'adm2', 'adm3', 'adm4', 'adm5')]))]
+
+base_china_adm2_gdf = base_china_adm2_gdf[["id", value_field, "geometry"]].copy()
 matched_china_adm2_gdf = adm_lookup(base_china_adm2_gdf.copy(), adm2_gdf)
 matched_china_adm2_gdf.loc[matched_china_adm2_gdf.buffer_size != 0][["id", "geometry", "buffer_size"]].to_file(adm_data_dir / f"{output_tag}_adm2_buffered.gpkg", driver="GPKG")
 
