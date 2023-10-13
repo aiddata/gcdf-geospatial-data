@@ -15,18 +15,15 @@ gb_v6/*.gpkg
 stats/
 esg/
 
-input_data/*
+input_data/
 !input_data/2.0release
 # !input_data/gcdf_v3
 
-output_data/*
-# output_data/*/*/*/*
-# !output_data/**/*.csv
-# output_data/**/*gdf*.csv
-# !output_data/gcdf_v3/results/2023_10_12_13_22/
-# !output_data/gcdf_v3/results/2023_10_12_13_22/feature_prep.csv
-
-# latest/*.geojson
+output_data/*.*
+output_data/3.0*
+output_data/mining_test
+output_data/gcdf_v3/results/*/*
+!output_data/gcdf_v3/results/2023_10_12_13_22/osm_geojsons
 
 examples/ntl_demo/viirs_ntl
 examples/ntl_demo/viirs_ntl_monthly
