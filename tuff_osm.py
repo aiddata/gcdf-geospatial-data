@@ -375,9 +375,9 @@ zipf = zipfile.ZipFile(grouped_zip_path, "w", zipfile.ZIP_DEFLATED)
 for i in osm_grouped_gdf.feature_type.unique():
     type_gdf = osm_grouped_gdf[osm_grouped_gdf.feature_type == i].copy()
     type_gdf.drop(columns=["feature_type"], inplace=True)
-    type_grouped_path = output_dir / "osm_geojsons" / 'grouped' / f"OSM_{i}.geojson"
-    type_gdf.to_file(type_grouped_path, driver="GeoJSON")
-    zipf.write(type_grouped_path, arcname=f"OSM_{i}.geojson")
+    type_grouped_path = output_dir / "osm_geojsons" / 'grouped' / f"OSM_{i}.gpkg"
+    type_gdf.to_file(type_grouped_path, driver="GPKG")
+    zipf.write(type_grouped_path, arcname=f"OSM_{i}.gpkg")
 
 zipf.close()
 
