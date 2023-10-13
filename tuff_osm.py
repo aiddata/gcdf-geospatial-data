@@ -148,6 +148,13 @@ base_df = input_data_df[['id', 'location', 'version', 'precision']].copy()
 
 link_df = utils.get_osm_links(base_df, osm_str, invalid_str_list, output_dir=output_dir, enforce_precision=True)
 
+link_osm_precision_info = link_df.osm_precision.value_counts()
+print(link_osm_precision_info)
+
+possible_issues = [i for i in link_osm_precision_info.to_dict().keys() for j in ['adm0', 'adm1', 'adm2', 'missing', 'unknown'] if j in i]
+possible_issues = [i for i in possible_issues if not (i.startswith("adm1") and i != "adm1")]
+if possible_issues:
+    print("WARNING: some links have adm0-adm2 precision or have missing/unknown precision info {}".format(possible_issues))
 
 if from_existing:
     existing_dir = output_dir.parent / existing_timestamp
