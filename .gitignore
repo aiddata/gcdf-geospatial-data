@@ -1,27 +1,34 @@
 stdoe
 *_osm.o*
-previous
 chrome*
 geckodriver*
 *firefox*
 __pycache__
 *.pyc
-input_data/*
-!input_data/2.0release
-# !input_data/gcdf_v3
-output_data/
-output_data/*/*/*/*
-!output_data/**/*.csv
-output_data/**/*gdf*.csv
-examples/ntl_demo/viirs_ntl
-examples/ntl_demo/viirs_ntl_monthly
-examples/generate_buffers/*.geojson
-examples/rasterize/rasters
-latest/*.geojson
 *.tif.aux.xml
 dask-worker-space/
 archive/
+previous/
+
 gb_v5/
 gb_v6/*.gpkg
 stats/
 esg/
+
+input_data/*
+!input_data/2.0release
+# !input_data/gcdf_v3
+
+output_data/*
+# output_data/*/*/*/*
+# !output_data/**/*.csv
+# output_data/**/*gdf*.csv
+# !output_data/gcdf_v3/results/2023_10_12_13_22/
+# !output_data/gcdf_v3/results/2023_10_12_13_22/feature_prep.csv
+
+# latest/*.geojson
+
+examples/ntl_demo/viirs_ntl
+examples/ntl_demo/viirs_ntl_monthly
+examples/generate_buffers/*.geojson
+examples/rasterize/rasters
