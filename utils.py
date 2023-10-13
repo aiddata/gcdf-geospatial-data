@@ -309,16 +309,31 @@ def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None, enfo
     def clean_precision_vals(raw):
 
         x = str(raw).lower()
+
         x = x.replace(" ", "")
+        x = x.replace("all", "")
         x = x.replace(",and", ",")
         x = x.replace("and", ",")
         x = x.replace(" ", "")
+        x = x.replace("`", "")
         x = x.replace(".", ",")
+
+        x = x.replace("preicise", "precise")
+        x = x.replace("preicse", "precise")
+        x = x.replace("amd", "adm")
+        if x.count('adm') > 1:
+            x = ',adm'.join(x.split('adm'))
+
         y = x.split(",")
+        y = [i for i in y if i != ""]
 
         def clean_precision_val(x):
             if "adm" in x:
-                return f"adm{x[-1]}"
+                adm_val = x[3:]
+                if not adm_val.isdigit():
+                    return f"unknown: {x}"
+                else:
+                    return f"adm{adm_val}"
             elif "appro" in x:
                 return "approximate"
             elif "prec" in x:
