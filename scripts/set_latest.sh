@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ ! -f tuff_osm.py ]]; then
+if [[ ! -f config.ini ]]; then
     echo "Please make sure you are in the repo root directory before running."
     echo -e "\t Currently in:" $PWD
     exit 1
@@ -20,10 +20,6 @@ cp -r ./latest/* ./previous/$prev/
 rm -r ./latest/*
 
 cp -r ./output_data/$release/results/$timestamp/geojsons ./latest/
-
-zip --junk-paths - ./output_data/$release/results/$timestamp/all_combined_global.geojson > ./latest/all_combined_global.geojson.zip
-zip --junk-paths - ./output_data/$release/results/$timestamp/development_combined_global.geojson > ./latest/development_combined_global.geojson.zip
-zip --junk-paths - ./output_data/$release/results/$timestamp/huawei_combined_global.geojson > ./latest/huawei_combined_global.geojson.zip
-zip --junk-paths - ./output_data/$release/results/$timestamp/military_combined_global.geojson > ./latest/military_combined_global.geojson.zip
+cp ./output_data/$release/results/$timestamp/all_combined_global.gpkg.zip ./latest/
 
 echo ${release}_${timestamp} > ./latest/version.txt
