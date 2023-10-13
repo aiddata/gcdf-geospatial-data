@@ -395,6 +395,8 @@ def get_osm_links(base_df, osm_str, invalid_str_list=None, output_dir=None, enfo
         link_df.loc[~link_df.has_precision_vals, 'valid'] = False
         link_df.loc[~link_df.has_matching_counts, 'valid'] = False
 
+    link_df.loc[link_df.osm_precision.apply(lambda x: x is None or 'unknown: ' in x), 'valid'] = False
+
     link_df[["clean_link", "osm_type", "osm_id"]] = link_df.apply(lambda x: clean_osm_link(x.osm_link, x.osm_version) if x.valid else (None, None, None), axis=1, result_type='expand')
 
 
