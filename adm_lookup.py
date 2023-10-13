@@ -13,7 +13,7 @@ intersection_threshold = 0.0001
 
 output_tag = "gcdf_v3"
 
-dataset_path = "/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/2023_10_05_11_52/all_combined_global.gpkg"
+dataset_path = "/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/2023_10_12_13_22/all_combined_global.gpkg"
 
 project_data_path = "/home/userx/Desktop/tuff_osm/input_data/gcdf_v3/cdf2021.csv"
 value_field = "Amount.(Constant.USD2021)"
@@ -108,6 +108,7 @@ matched_china_adm2_gdf.loc[matched_china_adm2_gdf.buffer_size != 0][["id", "geom
 
 
 buffer_summary = f"""
+Buffered/missing projects overview
 
 Project Count: {len(raw_china_gdf)}
 
