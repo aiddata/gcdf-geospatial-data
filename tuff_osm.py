@@ -367,7 +367,7 @@ for i in original_feature_df['id'].to_list():
     gdf_list.append(gdf)
 
 osm_grouped_gdf = pd.concat(gdf_list)
-osm_grouped_gdf["feature_type"] = osm_grouped_gdf.geometry.apply(lambda x: x.type)
+osm_grouped_gdf["feature_type"] = osm_grouped_gdf.geometry.apply(lambda x: x.geom_type)
 
 grouped_zip_path = output_dir / "osm_geojsons" / f"OSM_grouped.zip"
 zipf = zipfile.ZipFile(grouped_zip_path, "w", zipfile.ZIP_DEFLATED)
