@@ -1,0 +1,19 @@
+
+Buffered/missing projects overview
+
+Project Count: 9459
+
+ADM1:
+	 No buffer needed: 9151
+	 <=5km buffer: 235
+	 >5km buffer: 50
+	 No match with max buffer: 23
+
+
+
+ADM2:
+	 No buffer needed: 7834
+	 <=5km buffer: 262
+	 >5km buffer: 13
+	 No match with max buffer: 20
+
