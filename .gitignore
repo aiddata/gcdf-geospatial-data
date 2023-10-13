@@ -8,7 +8,7 @@ __pycache__
 *.pyc
 input_data/*
 !input_data/2.0release
-!input_data/gcdf_v3/gcdf_v3_prep.py
+# !input_data/gcdf_v3
 output_data/
 output_data/*/*/*/*
 !output_data/**/*.csv
@@ -24,3 +24,4 @@ archive/
 gb_v5/
 gb_v6/*.gpkg
 stats/
+esg/

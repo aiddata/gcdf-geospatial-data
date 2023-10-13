@@ -1,4 +1,5 @@
-# China OSM Geodata
+# AidData's Geospatial Global Chinese Development Dataset -- v3.0
+
 
 Welcome to the GitHub repository for [AidData's](https://www.aiddata.org/) Global Chinese Development Finance Dataset! Please also visit AidData's [dedicated page for work related to China](https://www.aiddata.org/china), where you can find blog posts, announcements, and more.
 
