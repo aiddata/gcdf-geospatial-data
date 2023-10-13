@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"id": 70000, "osm_link": "https://www.openstreetmap.org/node/2511410565#map=14/40.6528/69.5998", "osm_precision": "approximate"}, "geometry": {"type": "Point", "coordinates": [69.5998274, 40.6527641]}}]}

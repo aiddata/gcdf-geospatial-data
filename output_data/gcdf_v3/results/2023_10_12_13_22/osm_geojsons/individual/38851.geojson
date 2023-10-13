@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"id": 38851, "osm_link": "https://www.openstreetmap.org/way/51433825#map=16/13.5376/105.9903", "osm_precision": "precise"}, "geometry": {"type": "LineString", "coordinates": [[105.9919302, 13.5331159], [105.9886136, 13.5421526]]}}]}

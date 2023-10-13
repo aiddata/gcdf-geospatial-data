@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"id": 87063, "osm_link": "https://www.openstreetmap.org/way/1010481967#map=15/6.2468/7.1155", "osm_precision": "precise"}, "geometry": {"type": "LineString", "coordinates": [[7.1255562, 6.2426368], [7.1247894, 6.243868], [7.1233141, 6.246161], [7.1224666, 6.2475208], [7.1221095, 6.2480653]]}}]}

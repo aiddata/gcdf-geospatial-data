@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"id": 42189, "osm_link": "https://www.openstreetmap.org/way/747075449", "osm_precision": "precise"}, "geometry": {"type": "Polygon", "coordinates": [[[17.7959727, 44.754883], [17.7910771, 44.7503148], [17.7869261, 44.7525578], [17.7918205, 44.7571265], [17.7959727, 44.754883]]]}}]}
