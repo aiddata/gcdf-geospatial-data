@@ -171,9 +171,9 @@ china_adm1_gdf.drop(columns=[value_field], inplace=True)
 china_adm1_gdf = china_adm1_gdf[["id", "shapeID", "shapeGroup", "shapeName", "intersection_ratio", "even_split_ratio", "intersection_ratio_commitment_value", "even_split_ratio_commitment_value", "centroid_longitude", "centroid_latitude", "geometry"]]
 
 china_adm1_gdf["intersection_ratio"] = china_adm1_gdf["intersection_ratio"].astype(float).round(2)
-china_adm1_gdf["even_split_ratio"] = china_adm1_gdf["intersection_ratio"].astype(float).round(2)
+china_adm1_gdf["even_split_ratio"] = china_adm1_gdf["even_split_ratio"].astype(float).round(2)
 china_adm1_gdf["intersection_ratio_commitment_value"] = china_adm1_gdf["intersection_ratio_commitment_value"].astype(float).round(2)
-china_adm1_gdf["intersection_ratio_commitment_value"] = china_adm1_gdf["intersection_ratio_commitment_value"].astype(float).round(2)
+china_adm1_gdf["even_split_ratio_commitment_value"] = china_adm1_gdf["even_split_ratio_commitment_value"].astype(float).round(2)
 
 if not dry_run:
     china_adm1_gdf.to_file(adm_data_dir / f"{output_tag}_adm1.gpkg", driver="GPKG")
@@ -210,9 +210,9 @@ china_adm2_gdf["even_split_ratio_commitment_value"] = china_adm2_gdf["even_split
 china_adm2_gdf.drop(columns=[value_field], inplace=True)
 
 china_adm2_gdf["intersection_ratio"] = china_adm2_gdf["intersection_ratio"].astype(float).round(2)
-china_adm2_gdf["even_split_ratio"] = china_adm2_gdf["intersection_ratio"].astype(float).round(2)
+china_adm2_gdf["even_split_ratio"] = china_adm2_gdf["even_split_ratio"].astype(float).round(2)
 china_adm2_gdf["intersection_ratio_commitment_value"] = china_adm2_gdf["intersection_ratio_commitment_value"].astype(float).round(2)
-china_adm2_gdf["intersection_ratio_commitment_value"] = china_adm2_gdf["intersection_ratio_commitment_value"].astype(float).round(2)
+china_adm2_gdf["even_split_ratio_commitment_value"] = china_adm2_gdf["even_split_ratio_commitment_value"].astype(float).round(2)
 
 china_adm2_gdf = china_adm2_gdf[["id", "shapeID", "shapeGroup", "shapeName", "intersection_ratio", "even_split_ratio", "intersection_ratio_commitment_value", "even_split_ratio_commitment_value","centroid_longitude", "centroid_latitude", "geometry"]]
 
