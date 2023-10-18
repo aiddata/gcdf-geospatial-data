@@ -22,4 +22,4 @@ rm -r ./latest/*
 cp -r ./output_data/$release/results/$timestamp/geojsons ./latest/
 cp ./output_data/$release/results/$timestamp/all_combined_global.gpkg.zip ./latest/
 
-echo ${release}_${timestamp} > ./latest/version.txt
+echo ${release}-${timestamp} > ./latest/version.txt
