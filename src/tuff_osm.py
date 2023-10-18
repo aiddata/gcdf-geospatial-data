@@ -408,5 +408,5 @@ utils.export_combined_data(combined_gdf, output_dir, by_finance_type=False)
 print(f"""
 Dataset complete: {timestamp}
 \t{output_dir}
-To set this as latest dataset: \n\t bash {base_dir}/set_latest.sh {release_name} {timestamp}
+To set this as latest dataset: \n\t bash {base_dir}/scripts/set_latest.sh {release_name} {timestamp}
 """)
