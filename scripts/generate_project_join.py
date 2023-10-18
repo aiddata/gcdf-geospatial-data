@@ -1,18 +1,28 @@
 import ast
 
+import pandas as pd
 import geopandas as gpd
+
+
+output_timestamp = "2023_10_18_09_35"
+output_tag = "gcdf_v3"
 
 # ==========================================================
 # create file of data to be joined back into project level GCDF data
 
 
-pj_in_path = '/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/2023_10_12_13_22/all_combined_global.gpkg'
-pj_out_path = '/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/2023_10_12_13_22/project_join.csv'
+pj_in_path = f'/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/{output_timestamp}/all_combined_global.gpkg'
+
+adm1_links_path = f'/home/userx/Desktop/tuff_osm/gb_v6/{output_tag}_adm1.csv'
+adm2_links_path = f'/home/userx/Desktop/tuff_osm/gb_v6/{output_tag}_adm2.csv'
+
+pj_out_path = f'/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/{output_timestamp}/project_join.csv'
 
 pj_in = gpd.read_file(pj_in_path)
-
 pj_df = pj_in[["id", "osm_precision_list"]].copy()
 
+adm1_df = pd.read_csv(adm1_links_path)
+adm2_df = pd.read_csv(adm2_links_path)
 
 pj_df.osm_precision_list = pj_df.osm_precision_list.apply(lambda x: list(set(ast.literal_eval(x))))
 
@@ -32,14 +42,19 @@ bad_adm_gdf[[i for i in bad_adm_gdf.columns if 'osm_precision' not in i]].to_fil
 bad_adm_gdf[[i for i in bad_adm_gdf.columns if i != 'geometry']].to_csv(output_dir / 'bad_adm.csv', index=False)
 """
 
-pj_df["adm1_compatible"] = pj_df.osm_precision_list.apply(lambda x: all([i not in x for i in ('adm0', 'adm1', 'adm2')])).astype(int)
+# based on adm1 and adm2 files (which are based on precision list and actual gb adm unit matches)
+pj_df["adm1_compatible"] = pj_df.id.isin(adm1_df.id).astype(int)
+pj_df["adm2_compatible"] = pj_df.id.isin(adm2_df.id).astype(int)
 
-# drop adm0-adm5
-pj_df["adm2_compatible"] = pj_df.osm_precision_list.apply(lambda x: all([i not in x for i in ('adm0', 'adm1', 'adm2', 'adm3', 'adm4', 'adm5')])).astype(int)
+# # based on precision list
+# pj_df["adm1_compatible"] = pj_df.osm_precision_list.apply(lambda x: all([i not in x for i in ('adm0', 'adm1', 'adm2')])).astype(int)
+# pj_df["adm2_compatible"] = pj_df.osm_precision_list.apply(lambda x: all([i not in x for i in ('adm0', 'adm1', 'adm2', 'adm3', 'adm4', 'adm5')])).astype(int)
 
 pj_df["adm1_compatible"].replace({0: "No", 1: "Yes"}, inplace=True)
 pj_df["adm2_compatible"].replace({0: "No", 1: "Yes"}, inplace=True)
 
+# pj_df["adm1_compatible"].value_counts()
+# pj_df["adm2_compatible"].value_counts()
 
 # best precision value from precision list
 #   use human readable values
@@ -79,11 +94,12 @@ has_geospatial_feature
 Yes    9459
 
 adm1_compatible
-Yes    9459
+Yes    9286
+No      119
 
 adm2_compatible
-Yes    8075
-No     1384
+Yes    7969
+No     1436
 
 best_precision_field
 Precise        6510
