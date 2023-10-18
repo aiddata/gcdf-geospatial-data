@@ -8,14 +8,16 @@ import pandas as pd
 import geopandas as gpd
 
 
+output_timestamp = "2023_10_18_09_35"
+
 dry_run = False
-intersection_threshold = 0.0001
+intersection_threshold = 0.01
 
 output_tag = "gcdf_v3"
 
-dataset_path = "/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/2023_10_12_13_22/all_combined_global.gpkg"
+dataset_path = f"/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/{output_timestamp}/all_combined_global.gpkg"
 
-project_data_path = "/home/userx/Desktop/tuff_osm/input_data/gcdf_v3/cdf2021.csv"
+# project_data_path = "/home/userx/Desktop/tuff_osm/input_data/gcdf_v3/cdf2021.csv"
 value_field = "Amount.(Constant.USD2021)"
 # id_field = "AidData Tuff Project ID"
 
@@ -146,7 +148,7 @@ china_adm1_gdf = china_adm1_gdf.merge(adm1_gdf, on="shapeID", suffixes=("", "_ad
 china_adm1_gdf["intersection_ratio"] = china_adm1_gdf["geometry"].intersection(china_adm1_gdf["geometry_adm1"]).area / china_adm1_gdf["geometry"].area
 
 initial_adm1_count = china_adm1_gdf.shape[0]
-china_adm1_gdf = china_adm1_gdf.loc[china_adm1_gdf["intersection_ratio"] > intersection_threshold].copy()
+china_adm1_gdf = china_adm1_gdf.loc[china_adm1_gdf["intersection_ratio"] >= intersection_threshold].copy()
 final_adm1_count = china_adm1_gdf.shape[0]
 print(f"Removed {initial_adm1_count - final_adm1_count} adm1s (from {initial_adm1_count}) with intersection ratio < {intersection_threshold}. Final count is {final_adm1_count}.")
 
@@ -187,7 +189,7 @@ china_adm2_gdf = china_adm2_gdf.merge(adm2_gdf, on="shapeID", suffixes=("", "_ad
 china_adm2_gdf["intersection_ratio"] = china_adm2_gdf["geometry"].intersection(china_adm2_gdf["geometry_adm2"]).area / china_adm2_gdf["geometry"].area
 
 initial_adm2_count = china_adm2_gdf.shape[0]
-china_adm2_gdf = china_adm2_gdf.loc[china_adm2_gdf["intersection_ratio"] > intersection_threshold].copy()
+china_adm2_gdf = china_adm2_gdf.loc[china_adm2_gdf["intersection_ratio"] >= intersection_threshold].copy()
 final_adm2_count = china_adm2_gdf.shape[0]
 print(f"Removed {initial_adm2_count - final_adm2_count} adm2s (from {initial_adm2_count}) with intersection ratio < {intersection_threshold}. Final count is {final_adm2_count}.")
 
