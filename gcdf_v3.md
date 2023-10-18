@@ -23,15 +23,14 @@
 4. Upload the `all_combined_global.gpkg.zip` and `osm_geojsons/OSM_grouped.zip` files to the release assets
 
 
+## Build ADM1 and ADM2 files
+
+`python scripts/adm_lookup.py`
+
 
 ## Prepare data to be joined into project level GCDF v3 dataset
 
 `python scripts/generate_project_join.py`
-
-
-## Build ADM1 and ADM2 files
-
-`python scripts/adm_lookup.py`
 
 
 ## Generate Basic Stats
