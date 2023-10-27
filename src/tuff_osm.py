@@ -45,9 +45,12 @@ os.chdir(base_dir)
 
 import utils
 
-# import importlib
-# importlib.reload(utils)
-
+"""
+# for testing
+import src.utils as utils
+import importlib
+importlib.reload(utils)
+"""
 
 run_name = config["main"]["active_run_name"]
 
