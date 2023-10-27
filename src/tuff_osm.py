@@ -337,6 +337,10 @@ valid_df['original_feature'] = valid_df['original_feature'].apply(lambda x: shap
 # group a project's features into a single multipolygon
 grouped_df = utils.prepare_multipolygons(valid_df)
 
+assert 0 == grouped_df["osm_links"].apply(lambda x: any(["," in i for i in x])).sum()
+grouped_df["osm_links"] = grouped_df["osm_links"].apply(lambda x: ",".join(x))
+grouped_df["osm_precision_list"] = grouped_df["osm_precision_list"].apply(lambda x: ",".join(x))
+
 # assign path for grouped project features to be output to
 #   *** these are the primary project level individual geojson files ***
 grouped_df["geojson_path"] = grouped_df.id.apply(lambda x: output_dir / "geojsons" / f"{x}.geojson")
