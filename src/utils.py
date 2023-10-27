@@ -1133,7 +1133,7 @@ def export_combined_data(combined_gdf, output_dir, by_finance_type=False):
         if " Date " in c:
             combined_gdf[c] = combined_gdf[c].apply(lambda x: str(x))
 
-    combined_gdf.to_file(output_dir / "all_combined_global.geojson", driver="GeoJSON")
+    # combined_gdf.to_file(output_dir / "all_combined_global.geojson", driver="GeoJSON")
 
     gpkg_path = output_dir / "all_combined_global.gpkg"
     combined_gdf.to_file(gpkg_path, driver="GPKG")
@@ -1147,7 +1147,7 @@ def export_combined_data(combined_gdf, output_dir, by_finance_type=False):
         for i in set(combined_gdf.finance_type):
             print(i)
             subgrouped_df = combined_gdf[combined_gdf.finance_type == i].copy()
-            subgrouped_df.to_file(output_dir / f"{i}_combined_global.geojson", driver="GeoJSON")
+            # subgrouped_df.to_file(output_dir / f"{i}_combined_global.geojson", driver="GeoJSON")
             subgrouped_df.to_file(output_dir / f"{i}_combined_global.gpkg", driver="GPKG")
             # subgrouped_df.to_file(output_dir / f"{i}_combined_global.topojson", driver="TopoJSON")
 
