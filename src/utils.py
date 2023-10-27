@@ -127,14 +127,16 @@ def load_simple_input_data(base_dir, release_name, input_file_name, output_proje
         pandas.DataFrame: combined input dataframe
     """
     # read in separate datasets
-    if csv_name.endswith(".csv"):
-        all_df = pd.read_csv(base_dir / "input_data" / release_name / csv_name)
+    if input_file_name.endswith(".csv"):
+        all_df = pd.read_csv(base_dir / "input_data" / release_name / input_file_name)
     else:
-        all_df = pd.read_excel(base_dir / "input_data" / release_name / csv_name, sheet_name=0)
+        all_df = pd.read_excel(base_dir / "input_data" / release_name / input_file_name, sheet_name=0)
 
     all_df.dropna(axis=0, how='all', inplace=True)
     all_df.dropna(axis=1, how='all', inplace=True)
     all_df["finance_type"] = "all"
+
+    all_df.columns = [i.replace(" ", ".") for i in all_df.columns]
 
     # add field to indicate source dataset
 

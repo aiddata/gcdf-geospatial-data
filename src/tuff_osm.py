@@ -72,10 +72,7 @@ precision_field = config[run_name]["precision_field"]
 osm_str = config[run_name]["osm_str"]
 invalid_str_list = json.loads(config[run_name]["invalid_str_list"])
 
-# output_project_fields = json.loads(config[run_name]["output_project_fields"])
-individual_project_fields = json.loads(config[run_name]["individual_project_fields"])
-group_project_fields = json.loads(config[run_name]["group_project_fields"])
-output_project_fields = list(set(individual_project_fields + group_project_fields))
+output_project_fields = json.loads(config[run_name]["output_project_fields"])
 
 prepare_only = config.getboolean(run_name, "prepare_only")
 
@@ -345,7 +342,7 @@ grouped_df = utils.prepare_multipolygons(valid_df)
 grouped_df["geojson_path"] = grouped_df.id.apply(lambda x: output_dir / "geojsons" / f"{x}.geojson")
 
 # join original project fields back to be included in geojson properties
-grouped_df = grouped_df.merge(input_data_df[['id'] + individual_project_fields], on='id', how="left")
+grouped_df = grouped_df.merge(input_data_df[['id'] + output_project_fields], on='id', how="left")
 
 # create individual geojsons
 for ix, row in grouped_df.iterrows():
