@@ -361,31 +361,57 @@ for ix, row in grouped_df.iterrows():
 # Note: the truly raw features are cached by osm id in the "osm_geojsons" directory under "cache".
 # Note: These are minimalistic for advanced users, and do not include any non-essential project fields. Users must join in that data themselves if needed.
 
-original_feature_df = valid_df[["id", "original_feature", "osm_link", "osm_precision"]].copy()
 
-original_feature_df["geojson_path"] = original_feature_df.id.apply(lambda x: output_dir / "osm_geojsons" / "individual" / f"{x}.geojson")
+# /////////////////////////
+# old format of exporting an individual file for each project first
 
-# create individual geojsons
-for ix, row in original_feature_df.iterrows():
-    path, geom, props = utils.prepare_single_feature(row, "original_feature")
-    utils.output_single_feature_geojson(geom, props, path)
+# original_feature_df = valid_df[["id", "osm_id", "original_feature", "osm_link", "osm_precision"]].copy()
+
+# original_feature_df["record_id"] = original_feature_df.id
+
+# na_osm_id = original_feature_df.osm_id.isna()
+# original_feature_df.osm_id = original_feature_df.osm_id.fillna(
+#     pd.Series([f"directions{i}" for i in range(1, original_feature_df.osm_id.isna().sum()+1)], index=na_osm_id[na_osm_id].index)
+# )
+
+# original_feature_df["id"] = original_feature_df["record_id"].astype(str) + "_" + original_feature_df["osm_id"].astype(str)
 
 
-gdf_list = []
-for i in original_feature_df['id'].to_list():
-    gj_path = output_dir / "osm_geojsons" / 'individual' / f'{i}.geojson'
-    gdf = gpd.read_file(gj_path)
-    gdf_list.append(gdf)
+# original_feature_df["geojson_path"] = original_feature_df.osm_id.apply(lambda x: output_dir / "osm_geojsons" / "individual" / f"{x}.geojson")
 
-osm_grouped_gdf = pd.concat(gdf_list)
+# # create individual geojsons
+# for ix, row in original_feature_df.iterrows():
+#     path, geom, props = utils.prepare_single_feature(row, "original_feature")
+#     utils.output_single_feature_geojson(geom, props, path)
+
+
+# gdf_list = []
+# for i in original_feature_df['osm_id'].to_list():
+#     gj_path = output_dir / "osm_geojsons" / 'individual' / f'{i}.geojson'
+#     gdf = gpd.read_file(gj_path)
+#     gdf_list.append(gdf)
+
+# osm_grouped_gdf = pd.concat(gdf_list)
+
+# /////////////////////////
+# new format, no need for individual geojson files so we can just go directly to grouping them by feature type
+
+orig_feature_df = valid_df[["id", "original_feature", "osm_link", "osm_precision"]].copy()
+
+osm_grouped_gdf = gpd.GeoDataFrame(orig_feature_df, geometry="original_feature")
+# /////////////////////////
+
 osm_grouped_gdf["feature_type"] = osm_grouped_gdf.geometry.apply(lambda x: x.geom_type)
 
 grouped_zip_path = output_dir / "osm_geojsons" / f"OSM_grouped.zip"
 zipf = zipfile.ZipFile(grouped_zip_path, "w", zipfile.ZIP_DEFLATED)
 
+# type_gdf_dict = {}
 for i in osm_grouped_gdf.feature_type.unique():
     type_gdf = osm_grouped_gdf[osm_grouped_gdf.feature_type == i].copy()
+    # type_gdf["fid"] = range(1, len(type_gdf)+1)
     type_gdf.drop(columns=["feature_type"], inplace=True)
+    # type_gdf_dict[i] = type_gdf
     type_grouped_path = output_dir / "osm_geojsons" / 'grouped' / f"OSM_{i}.gpkg"
     type_gdf.to_file(type_grouped_path, driver="GPKG")
     zipf.write(type_grouped_path, arcname=f"OSM_{i}.gpkg")
