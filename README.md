@@ -10,23 +10,19 @@ This repository allows you to:
 
 <br/>
 
-### [Download AidData’s Global Chinese Development Finance Dataset](https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-2-0)
+### [Download AidData’s Global Chinese Development Finance Dataset v3.0](https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-3-0)
 
 
-### [Download the accompanying geospatial dataset](https://github.com/aiddata/china-osm-geodata/raw/master/latest/development_combined_global.geojson.zip)
+### [Download the accompanying geospatial dataset](releases/latest)
 
 
 <br/>
 
 ## Dataset Description
 
-The 2.0 version of **AidData’s Global _Chinese Development Finance_ Dataset** records the known universe of projects (with development, commercial, or representational intent) supported by official financial and in-kind commitments (or pledges) from China between 2000 and 2017, with implementation details covering a 22-year period (2000-2021). AidData systematically collected and quality-assured all projects in the dataset using the 2.0 version of the TUFF methodology.
+The 3.0 version of **AidData’s Global _Chinese Development Finance_ Dataset** records the known universe of projects supported by official financial and in-kind commitments (or pledges) from China between 2000 and 2021. The Geospatial Global Chinese Development Finance Dataset  (Version 3.0) detailed in this repository captures the geospatial features of 9,405 projects across 148 low- and middle-income countries supported by Chinese grant and loan commitments worth more than USD 830 billion. The dataset provides details of 6,266 projects containing spatial definitions of roads, railways, power plants, transmission lines, buildings, and other precisely geocoded features. It identifies approximate and administrative-level locations for 3,139 additional projects.
 
-In addition to Development Finance, separate datasets on Chinese Military Finance and Huawei Finance are provided. **AidData's Global _Chinese Military Finance_ Dataset** contains data on projects backed by financial and in-kind commitments (or pledges) from official sources in China that were provided with military intent. **AidData's Global _Huawei Finance_ Dataset** contains data on projects backed by financial and in-kind commitments (and pledges) from Huawei Technologies Co., Ltd. (“Huawei”) and its subsidiaries. Due to some military finance falling outside of the OECD-DAC criteria for Official Development Assistance and uncertainty about whether Huawei should be treated as a private company or state-owned company, these projects are provided as separate datasets. To read more about these datasets, please read [their full descriptions](input_data/2.0release/README.md).
-
-For a subset of these projects, precise geographic features associated with the location of project activities were identifed through OpenStreetMap. Projects for which OSM features are available have links included in the main dataset to visualize or download the geospatial data from this GitHub repository. Geospatial data is available in the [GeoJSON](https://geojson.org/) format, and are saved in the [latest/geojsons](latest/geojsons) folder, with one GeoJSON per project named according to the project ID. For example, Project 35756 can be viewed via [latest/geojsons/35756.geojson](latest/geojsons/35756.geojson).
-
-Combined GeoJSONS (within a Zip file) are also available within the [latest](latest) folder. The combined GeoJSONS are available for [Chinese Development Finance projects](latest/development_combined_global.geojson.zip), [Chinese Military Finance projects](latest/military_combined_global.geojson.zip), [Huawei Finance projects](latest/huawei_combined_global.geojson.zip), and [all projects](latest/all_combined_global.geojson.zip).
+Geographic features associated with the location of project activities were identifed through OpenStreetMap. Projects for which OSM features are available have links included in the main dataset to visualize or download the geospatial data from this GitHub repository. Geospatial data is available in bulk as a [GeoPackage](https://www.geopackage.org/) available with each [Release](releases/latest) or as individual [GeoJSONs](https://geojson.org/) saved in the [latest/geojsons](latest/geojsons) folder (with one GeoJSON per project named according to the project ID). For example, Project 35756 can be viewed via [latest/geojsons/35756.geojson](latest/geojsons/35756.geojson).
 
 
 Examples, guides, best practices, and other material related to utilizing the geospatial data can be found in the [Examples](examples) folder. For information on using the core datset and project data, please explore the tabs of the official dataset (see download link for the latest data above).
@@ -46,9 +42,9 @@ Please see the [LICENSE file](LICENSE.md) for human-readable summaries of both O
 
 The following citations may be used to credit AidData (Please note: Both works count as the official citation for this dataset):
 ```
-Custer, S., Dreher, A., Elston, T.B., Fuchs, A., Ghose, S., Lin, J., Malik, A., Parks, B.C., Russell, B., Solomon, K., Strange, A., Tierney, M.J., Walsh, K., Zaleski, L., and Zhang, S. 2021. Tracking Chinese Development Finance: An Application of AidData’s TUFF 2.0 Methodology. Williamsburg, VA: AidData at William & Mary.
+Custer, S., Dreher, A., Elston, T.B., Escobar, B., Fedorochko, R., Fuchs, A., Ghose, S., Lin, J., Malik, A., Parks, B.C., Solomon, K., Strange, A., Tierney, M.J., Vlasto, L., Walsh, K., Wang, F., Zaleski, L., and Zhang, S. 2023. Tracking Chinese Development Finance: An Application of AidData’s TUFF 3.0 Methodology. Williamsburg, VA: AidData at William & Mary.
 
-Dreher, A., Fuchs, A., Parks, B. C., Strange, A., & Tierney, M.J. (Forthcoming). Banking on Beijing: The Aims and Impacts of China’s Overseas Development Program. Cambridge, UK: Cambridge University Press.
+Dreher, A., Fuchs, A., Parks, B. C., Strange, A., & Tierney, M.J. 2022. Banking on Beijing: The Aims and Impacts of China’s Overseas Development Program. Cambridge, UK: Cambridge University Press.
 
 ```
 
