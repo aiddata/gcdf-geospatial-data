@@ -13,7 +13,7 @@ This repository allows you to:
 ### [Download AidData’s Global Chinese Development Finance Dataset v3.0](https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-3-0)
 
 
-### [Download the accompanying geospatial dataset](releases/latest)
+### [Download the accompanying geospatial dataset](https://github.com/aiddata/china-osm-geodata/releases/latest)
 
 
 <br/>
@@ -22,7 +22,7 @@ This repository allows you to:
 
 The 3.0 version of **AidData’s Global _Chinese Development Finance_ Dataset** records the known universe of projects supported by official financial and in-kind commitments (or pledges) from China between 2000 and 2021. The Geospatial Global Chinese Development Finance Dataset  (Version 3.0) detailed in this repository captures the geospatial features of 9,405 projects across 148 low- and middle-income countries supported by Chinese grant and loan commitments worth more than USD 830 billion. The dataset provides details of 6,266 projects containing spatial definitions of roads, railways, power plants, transmission lines, buildings, and other precisely geocoded features. It identifies approximate and administrative-level locations for 3,139 additional projects.
 
-Geographic features associated with the location of project activities were identifed through OpenStreetMap. Projects for which OSM features are available have links included in the main dataset to visualize or download the geospatial data from this GitHub repository. Geospatial data is available in bulk as a [GeoPackage](https://www.geopackage.org/) available with each [Release](releases/latest) or as individual [GeoJSONs](https://geojson.org/) saved in the [latest/geojsons](latest/geojsons) folder (with one GeoJSON per project named according to the project ID). For example, Project 35756 can be viewed via [latest/geojsons/35756.geojson](latest/geojsons/35756.geojson).
+Geographic features associated with the location of project activities were identifed through OpenStreetMap. Projects for which OSM features are available have links included in the main dataset to visualize or download the geospatial data from this GitHub repository. Geospatial data is available in bulk as a [GeoPackage](https://www.geopackage.org/) available with each [Release](https://github.com/aiddata/china-osm-geodata/releases/latest) or as individual [GeoJSONs](https://geojson.org/) saved in the [latest/geojsons](latest/geojsons) folder (with one GeoJSON per project named according to the project ID). For example, Project 35756 can be viewed via [latest/geojsons/35756.geojson](latest/geojsons/35756.geojson).
 
 
 Examples, guides, best practices, and other material related to utilizing the geospatial data can be found in the [Examples](examples) folder. For information on using the core datset and project data, please explore the tabs of the official dataset (see download link for the latest data above).
