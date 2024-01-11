@@ -102,7 +102,7 @@ conda create -n china_osm python=3.9
 conda activate china_osm
 conda install -c conda-forge bs4 shapely pandas geopandas selenium==3.141.0 openpyxl conda-build
 pip install overpass
-pip install git+https://github.com/jacobwhall/osm2geojson
+pip install git+https://github.com/jacobwhall/osm2geojson.git@seth_debug
 pip install prefect==2.2.0 prefect-dask==0.1.2 bokeh>=2.1.1
 ```
 
@@ -110,7 +110,7 @@ Notes:
 - The `core_environment.yml` file is available with specific versions of core packages installed by Conda if needed (specific Selenium version specified above).
     - Use `conda env create -f core_environment.yml` to builds from this file.
     - You may still need to install packages using pip after creating the environment in some cases.
-- pip was needed to install osm2geojson and prefect in order to get newer versions (may be available through latest conda, but not tested in our build)
+- pip was needed to install osm2geojson and prefect in order to get newer/modified versions (may be available through latest conda, but not tested in our build)
 - Due to variability in dependency versions that will work across systems (e.g., Linux vs Mac) we suggest using the core_environment to create your build rather than replicating our full test environment. If you do wish to replicate our test environmentally exactly (built for Ubuntu based Linux), you may use the `environment.yml` file instead.
 
 Add the path to where you cloned the repo to your Conda environment:
