@@ -12,4 +12,4 @@ To overcome this issue, all point and line features are buffered slightly (appro
 <img alt="Separate Point, LineString, and Polygon features" src="separate_shapes.png" height="300">
 <img alt="Combined MultiPolygon" src="merged_multipolygon.png" height="300">
 
-The final collection of MultiPolygons is then exported using the [GeoJSON](https://geojson.org/) file format for geospatial data.
+The final collection of MultiPolygons is then exported using the [GeoJSON](https://geojson.org/) and [GeoPackage](https://www.geopackage.org/) file formats for geospatial data.

@@ -19,27 +19,27 @@ from utility import rasterize_geom, Grid
 
 # field from input geojson which contains the value to be
 # distributed over geometry during rasterization (must be numeric)
-val_field = 'Amount (Constant USD2017)'
+val_field = 'Amount.(Constant.USD.2021)'
 # field containing the project sector name
 # used for filtering
-sector_field = 'AidData Sector Name'
+sector_field = 'Sector.Name'
 # sector names to use for filtering (values)
 # and short names for output filenames (keys)
 sector_list = {
     "all": "all",
-    # "transport": "TRANSPORT AND STORAGE",
-    # "energy": "ENERGY",
-    # "industry": "INDUSTRY, MINING, CONSTRUCTION"
+    "transport": "TRANSPORT AND STORAGE",
+    "energy": "ENERGY",
+    "industry": "INDUSTRY, MINING, CONSTRUCTION"
 }
 
 
 # path to zipped geojson in GitHub repository
 # assumed working directory is the same directory this file is in (examples/generate_buffers)
-input_zip_path = "../../latest/development_combined_global.geojson.zip"
+input_zip_path = "../../latest/all_combined_global.gpkg.zip"
 
 # read zipfile into memory
 input_zip = ZipFile(input_zip_path)
-geojson_bytes = input_zip.read("development_combined_global.geojson")
+geojson_bytes = input_zip.read("all_combined_global.gpkg")
 
 # load zipfile contents into geodataframe and set crs
 geojson_dict = json.loads(geojson_bytes)
@@ -47,7 +47,7 @@ gdf = gpd.GeoDataFrame.from_features(geojson_dict)
 gdf = gdf.set_crs(epsg=4326)
 
 # ignore any projects not yet completed
-gdf = gdf.loc[gdf["Recommended For Aggregates"] == "Yes"]
+# gdf = gdf.loc[gdf["Recommended For Aggregates"] == "Yes"]
 
 # optional step: simplify 3 outliers with very large geometries
 big_geoms = [178, 56959, 695]

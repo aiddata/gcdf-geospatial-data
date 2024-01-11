@@ -19,11 +19,11 @@ import polygon_splitter
 
 # path to zipped geojson in GitHub repository
 # assumed working directory is the same directory this file is in (examples/generate_buffers)
-input_zip_path = "../../latest/development_combined_global.geojson.zip"
+input_zip_path = "../../latest/all_combined_global.gpkg.zip"
 
 # read zipfile into memory
 input_zip = ZipFile(input_zip_path)
-geojson_bytes = input_zip.read("development_combined_global.geojson")
+geojson_bytes = input_zip.read("all_combined_global.gpkg")
 
 # load zipfile contents into geodataframe and set crs
 geojson_dict = json.loads(geojson_bytes)
@@ -40,7 +40,7 @@ gdf = gdf.to_crs("+proj=eck4 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_de
 
 # define buffer sizes to generate and format for output paths
 buffer_sizes = [0, 500, 2500, 5000]
-buffer_path_template = "development_combined_global_BUFFERm.geojson"
+buffer_path_template = "all_combined_global_BUFFERm.gpkg"
 
 
 
@@ -63,7 +63,7 @@ def buffer_data(bs):
     buffer_gdf.geometry = buffer_gdf.geometry.apply(lambda x: MultiPolygon([x]) if x.type == 'Polygon' else x)
     # save buffered geometry to file
     buffer_output_path = str(buffer_path_template).replace("BUFFER", str(bs))
-    buffer_gdf.to_file(buffer_output_path, driver='GeoJSON')
+    buffer_gdf.to_file(buffer_output_path, driver='GPKG')
 
 
 # run generation of buffers for each size in parallel

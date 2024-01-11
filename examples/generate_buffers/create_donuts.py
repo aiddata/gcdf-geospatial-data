@@ -9,7 +9,7 @@ import geopandas as gpd
 from shapely.geometry import MultiPolygon
 
 
-buffer_path_template = "development_combined_global_BUFFERm.geojson"
+buffer_path_template = "all_combined_global_BUFFERm.gpkg"
 
 outer_buffer_size = 10000
 inner_buffer_size = 5000
@@ -44,5 +44,5 @@ donut_gdf['geometry'] = donut_gdf.apply(lambda x: difference(x['geometry_x'], x[
 
 output_gdf = gpd.GeoDataFrame(donut_gdf.drop(columns=['geometry_x', 'geometry_y']))
 
-output_path = f"{outer_buffer_size}m_{inner_buffer_size}m_donut.geojson"
-output_gdf.to_file(output_path, driver="GeoJSON")
+output_path = f"{outer_buffer_size}m_{inner_buffer_size}m_donut.gpkg"
+output_gdf.to_file(output_path, driver="GPKG")
