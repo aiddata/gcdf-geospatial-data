@@ -117,7 +117,7 @@ def translate_polygons(geometry_collection: GeometryCollection,
                           Union[List[dict], List[Polygon]], None, None
                        ]:
 
-  for polygon in geometry_collection:
+  for polygon in geometry_collection.geoms:
       (minx, _, maxx, _) = polygon.bounds
       if minx < -180: geo_polygon = affinity.translate(polygon, xoff = 360)
       elif maxx > 180: geo_polygon = affinity.translate(polygon, xoff = -360)

@@ -54,11 +54,14 @@ def buffer_data(bs):
     # convert back to wgs84
     buffer_gdf = buffer_gdf.to_crs(epsg=4326)
     # deal with geom that cross antimeridian
-    mp_geo = buffer_gdf.loc[buffer_gdf.id == 64952, 'geometry'].iloc[0]
-    if mp_geo.bounds[2] - mp_geo.bounds[0] > 180:
-        mp = json.loads(json.dumps(mapping(mp_geo)))
-        z = MultiPolygon([shape(json.loads(i)) for i in polygon_splitter.split_polygon(mp)])
-        buffer_gdf.loc[buffer_gdf.id == 64952, 'geometry'] = gpd.GeoDataFrame(geometry=[z]).geometry.values
+    if bs > 5000:
+        buffer_gdf = buffer_gdf.loc[~buffer_gdf.id == 64952].copy()
+    else
+        mp_geo = buffer_gdf.loc[buffer_gdf.id == 64952, 'geometry'].iloc[0]
+        if mp_geo.bounds[2] - mp_geo.bounds[0] > 180:
+            mp = json.loads(json.dumps(mapping(mp_geo)))
+            z = MultiPolygon([shape(json.loads(i)) for i in polygon_splitter.split_polygon(mp)])
+            buffer_gdf.loc[buffer_gdf.id == 64952, 'geometry'] = gpd.GeoDataFrame(geometry=[z]).geometry.values
     # convert to multipolygon
     buffer_gdf.geometry = buffer_gdf.geometry.apply(lambda x: MultiPolygon([x]) if x.type == 'Polygon' else x)
     # save buffered geometry to file
