@@ -6,8 +6,8 @@ Generate rasters for all projects, and sector subsets ("TRANSPORT AND STORAGE", 
 Only rasterize projects that have "Recommended For Aggregates" set to "Yes"
 """
 
-import os
 import json
+import os
 from zipfile import ZipFile
 
 import geopandas as gpd
@@ -15,21 +15,21 @@ import numpy as np
 from shapely.geometry import box
 from tqdm import tqdm
 
-from utility import rasterize_geom, Grid
+from utility import Grid, rasterize_geom
 
 # field from input geojson which contains the value to be
 # distributed over geometry during rasterization (must be numeric)
-val_field = 'Amount.(Constant.USD.2021)'
+val_field = "Amount.(Constant.USD.2021)"
 # field containing the project sector name
 # used for filtering
-sector_field = 'Sector.Name'
+sector_field = "Sector.Name"
 # sector names to use for filtering (values)
 # and short names for output filenames (keys)
 sector_list = {
     "all": "all",
     "transport": "TRANSPORT AND STORAGE",
     "energy": "ENERGY",
-    "industry": "INDUSTRY, MINING, CONSTRUCTION"
+    "industry": "INDUSTRY, MINING, CONSTRUCTION",
 }
 
 
@@ -51,17 +51,21 @@ gdf = gdf.set_crs(epsg=4326)
 
 # optional step: simplify 3 outliers with very large geometries
 big_geoms = [178, 56959, 695]
-gdf.loc[gdf.id.isin(big_geoms), 'geometry'] = gdf.loc[gdf.id.isin(big_geoms), 'geometry'].simplify(0.00001)
+gdf.loc[gdf.id.isin(big_geoms), "geometry"] = gdf.loc[
+    gdf.id.isin(big_geoms), "geometry"
+].simplify(0.00001)
 
 # drop projects with no data for val_field
 gdf[val_field] = gdf[val_field].fillna(0).astype(float)
 gdf_valid = gdf.loc[gdf[val_field] > 0].copy()
 
 print(f"Total project count with valid commitment values: {len(gdf_valid)}")
-print(f"Project counts for specified sectors: \n{gdf_valid.loc[gdf_valid[sector_field].isin(sector_list.values()), sector_field].value_counts()}")
+print(
+    f"Project counts for specified sectors: \n{gdf_valid.loc[gdf_valid[sector_field].isin(sector_list.values()), sector_field].value_counts()}"
+)
 
 # create dataframe with only necessary columns
-gdf_rasterize = gdf_valid[['id', 'geometry', sector_field, val_field]].copy()
+gdf_rasterize = gdf_valid[["id", "geometry", sector_field, val_field]].copy()
 
 
 # -----------------
