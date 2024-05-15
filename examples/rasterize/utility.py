@@ -178,9 +178,9 @@ def rasterize_geom(geom, pixel_size, scale=1, dtype="uint32"):
     psi = 1 / pixel_size
     (minx, miny, maxx, maxy) = geom.bounds
     (minx, miny, maxx, maxy) = (
-        round(np.floor(minx * psi)) / psi,
+        max(round(np.floor(minx * psi)) / psi, -180),
         round(np.floor(miny * psi)) / psi,
-        round(np.ceil(maxx * psi)) / psi,
+        min(round(np.ceil(maxx * psi)) / psi, 180),
         round(np.ceil(maxy * psi)) / psi,
     )
 
