@@ -1,4 +1,6 @@
 import shutil
+from collections import namedtuple
+from typing import Optional
 from warnings import warn
 
 import numpy as np
@@ -6,6 +8,8 @@ import rasterio
 from affine import Affine
 from rasterio import features
 from rasterio.windows import Window
+
+Bounds = namedtuple("Bounds", ["minx", "miny", "maxx", "maxy"])
 
 
 class Grid:
@@ -26,7 +30,7 @@ class Grid:
         self.nodata_val = nodata_val
         # class attributes to be defined during init
         self.shape = None
-        self.bounds = None
+        self.bounds: Optional[Bounds] = None
         self.affine = None
         # initialize class
         self.set_pixel_size(pixel_size)
@@ -67,7 +71,7 @@ class Grid:
             round(np.ceil(maxx * self.psi)) / self.psi,
             round(np.ceil(maxy * self.psi)) / self.psi,
         )
-        self.bounds = (minx, miny, maxx, maxy)
+        self.bounds = Bounds(minx, miny, maxx, maxy)
         self.affine = Affine(self.pixel_size, 0, minx, 0, -self.pixel_size, maxy)
         nrows = int(np.ceil((maxy - miny) / self.pixel_size))
         ncols = int(np.ceil((maxx - minx) / self.pixel_size))
@@ -95,13 +99,13 @@ class Grid:
         """Update grid raster based on bounds and data provided"""
         ileft = int(
             round(
-                np.floor((bounds[0] - self.bounds[0]) * self.psi)
+                np.floor((bounds[0] - self.bounds.minx) * self.psi)
                 / (self.pixel_size * self.psi)
             )
         )
         itop = int(
             round(
-                np.floor((self.bounds[3] - bounds[3]) * self.psi)
+                np.floor((self.bounds.maxy - bounds[3]) * self.psi)
                 / (self.pixel_size * self.psi)
             )
         )
