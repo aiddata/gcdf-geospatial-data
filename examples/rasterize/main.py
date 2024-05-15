@@ -6,7 +6,6 @@ Generate rasters for all projects, and sector subsets ("TRANSPORT AND STORAGE", 
 Only rasterize projects that have "Recommended For Aggregates" set to "Yes"
 """
 
-import json
 import os
 from zipfile import ZipFile
 
@@ -40,10 +39,14 @@ input_zip_path = "../../all_combined_global.gpkg.zip"
 
 # read zipfile into memory
 input_zip = ZipFile(input_zip_path)
-input_zip.extract("home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/2023_12_04_13_25/all_combined_global.gpkg")
+input_zip.extract(
+    "home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/2023_12_04_13_25/all_combined_global.gpkg"
+)
 
 # load zipfile contents into geodataframe and set crs
-gdf = gpd.GeoDataFrame.from_file("home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/2023_12_04_13_25/all_combined_global.gpkg")
+gdf = gpd.GeoDataFrame.from_file(
+    "home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/2023_12_04_13_25/all_combined_global.gpkg"
+)
 gdf = gdf.set_crs(epsg=4326)
 
 # ignore any projects not yet completed
@@ -104,7 +107,7 @@ for sector_name, sector_value in sector_list.items():
     work_list = list(zip(gdf_tmp.id, gdf_tmp.geometry, gdf_tmp[val_field]))
 
     for id, geom, val in tqdm(work_list):
-        print(id)
+        # print(id)
         surf, bounds = rasterize_geom(geom, grid.pixel_size)
         # determine surface values based on val_field value for project
         # distribution during rasterization
