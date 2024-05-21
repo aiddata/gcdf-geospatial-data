@@ -1137,8 +1137,8 @@ def export_combined_data(combined_gdf, output_dir, by_finance_type=False):
 
     gpkg_path = output_dir / "all_combined_global.gpkg"
     combined_gdf.to_file(gpkg_path, driver="GPKG")
-    with zipfile.ZipFile(f"{gpkg_path}.zip","w", zipfile.ZIP_DEFLATED) as zipf:
-        zipf.write(gpkg_path)
+    with zipfile.ZipFile(f"{gpkg_path}.zip", "w", zipfile.ZIP_DEFLATED) as zipf:
+        zipf.write(gpkg_path, gpkg_path.name)
 
     # combined_gdf.to_file(output_dir / "all_combined_global.topojson", driver="TopoJSON")
 
