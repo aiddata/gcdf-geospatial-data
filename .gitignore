@@ -15,6 +15,10 @@ gb_v6/*.gpkg
 stats/
 esg/
 
+gb_v6/his_precise_*
+output_data/his_precise
+scripts/hisprecise_adm_lookup.py
+
 input_data/
 !input_data/2.0release
 # !input_data/gcdf_v3
