@@ -8,14 +8,14 @@ import pandas as pd
 import geopandas as gpd
 
 
-output_timestamp = "2023_10_18_09_35"
 
 dry_run = False
 intersection_threshold = 0.01
 
 output_tag = "gcdf_v3"
-
+output_timestamp = "2023_10_18_09_35"
 dataset_path = f"/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/{output_timestamp}/all_combined_global.gpkg"
+
 
 # project_data_path = "/home/userx/Desktop/tuff_osm/input_data/gcdf_v3/cdf2021.csv"
 value_field = "Amount.(Constant.USD2021)"
