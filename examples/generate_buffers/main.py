@@ -19,15 +19,14 @@ import polygon_splitter
 
 # path to zipped geojson in GitHub repository
 # assumed working directory is the same directory this file is in (examples/generate_buffers)
-input_zip_path = "../../latest/all_combined_global.gpkg.zip"
+input_zip_path = "../../all_combined_global.gpkg.zip"
 
 # read zipfile into memory
 input_zip = ZipFile(input_zip_path)
-geojson_bytes = input_zip.read("all_combined_global.gpkg")
+input_zip.extract("all_combined_global.gpkg")
 
 # load zipfile contents into geodataframe and set crs
-geojson_dict = json.loads(geojson_bytes)
-gdf = gpd.GeoDataFrame.from_features(geojson_dict)
+gdf = gpd.GeoDataFrame.from_file("all_combined_global.gpkg")
 gdf = gdf.set_crs(epsg=4326)
 
 # optional step: simplify 3 outliers with very large geometries
