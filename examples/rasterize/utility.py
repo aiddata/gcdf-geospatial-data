@@ -1,5 +1,6 @@
 import shutil
 from collections import namedtuple
+from math import ceil
 from typing import Optional
 from warnings import warn
 
@@ -184,7 +185,7 @@ def rasterize_geom(geom, pixel_size, scale=1, dtype="uint32"):
         round(np.ceil(maxy * psi)) / psi,
     )
 
-    tmp_shape = [int((maxy - miny) / pixel_size), int((maxx - minx) / pixel_size)]
+    tmp_shape = (ceil((maxy - miny) / pixel_size), ceil((maxx - minx) / pixel_size))
 
     for i in range(len(tmp_shape)):
         if tmp_shape[i] < 1:
