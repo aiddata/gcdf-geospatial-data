@@ -13,16 +13,16 @@ This repository allows you to:
 ### [Download AidData’s Global Chinese Development Finance Dataset v3.0](https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-3-0)
 
 
-### [Download the accompanying geospatial dataset](https://github.com/aiddata/china-osm-geodata/releases/latest)
+### [Download the accompanying geospatial dataset](https://github.com/aiddata/gcdf-geospatial-data/releases/latest)
 
 
 <br/>
 
 ## Dataset Description
 
-The 3.0 version of **AidData’s Global _Chinese Development Finance_ Dataset** records the known universe of projects supported by official financial and in-kind commitments (or pledges) from China between 2000 and 2021. The Geospatial Global Chinese Development Finance Dataset  (Version 3.0) detailed in this repository captures the geospatial features of 9,405 projects across 148 low- and middle-income countries supported by Chinese grant and loan commitments worth more than USD 830 billion. The dataset provides details of 6,266 projects containing spatial definitions of roads, railways, power plants, transmission lines, buildings, and other precisely geocoded features. It identifies approximate and administrative-level locations for 3,139 additional projects.
+The 3.0 version of AidData’s _Global Chinese Development Finance Dataset_ (__GCDF v3__) records the known universe of projects supported by official financial and in-kind commitments (or pledges) from China between 2000 and 2021. The Geospatial Global Chinese Development Finance Dataset, Version 3.0 (__GeoGCDF v3__) detailed in this repository captures the geospatial features of 9,405 projects across 148 low- and middle-income countries supported by Chinese grant and loan commitments worth more than USD 830 billion. The dataset provides details of 6,266 projects containing spatial definitions of roads, railways, power plants, transmission lines, buildings, and other precisely geocoded features. It identifies approximate and administrative-level locations for 3,139 additional projects.
 
-Geographic features associated with the location of project activities were identifed through OpenStreetMap. Projects for which OSM features are available have links included in the main dataset to visualize or download the geospatial data from this GitHub repository. Geospatial data is available in bulk as a [GeoPackage](https://www.geopackage.org/) available with each [Release](https://github.com/aiddata/china-osm-geodata/releases/latest) or as individual [GeoJSONs](https://geojson.org/) saved in the [latest/geojsons](latest/geojsons) folder (with one GeoJSON per project named according to the project ID). For example, Project 35756 can be viewed via [latest/geojsons/35756.geojson](latest/geojsons/35756.geojson).
+Geographic features associated with the location of project activities were identifed through OpenStreetMap. Projects for which OSM features are available are labeled in the main dataset and can be linked with geospatial data from this GitHub repository, or used directly from the data provided here. Geospatial data is available in bulk as a [GeoPackage](https://www.geopackage.org/) available with each [Release](https://github.com/aiddata/gcdf-geospatial-data/releases/latest) or as individual [GeoJSONs](https://geojson.org/) saved in the [latest/geojsons](latest/geojsons) folder (with one GeoJSON per project named according to the project ID). For example, Project 35756 can be viewed via [latest/geojsons/35756.geojson](latest/geojsons/35756.geojson).
 
 
 Examples, guides, best practices, and other material related to utilizing the geospatial data can be found in the [Examples](examples) folder. For information on using the core datset and project data, please explore the tabs of the official dataset (see download link for the latest data above).
@@ -39,16 +39,20 @@ Any use of the dataset and its content must include appropriate attribution to A
 
 Please see the [LICENSE file](LICENSE.md) for human-readable summaries of both ODC-By and ODbL, and links to the full licenses.
 
+The following citation should be used to credit AidData for the GeoGCDF v3 (i.e., the geospatial features and associated information)
+```
+Goodman, S., Zhang, S., Malik, A.A., Parks, B.C., Hall, J. 2024. AidData's Geospatial Global Chinese Development Finance Dataset. Scientific Data.
+```
 
-The following citations may be used to credit AidData (Please note: Both works count as the official citation for this dataset):
+In addition, use of the geospatial data should credit OpenStreetMap. OpenStreetMap may be credited using `© OpenStreetMap contributors` or by linking to their copyright page ([https://www.openstreetmap.org/copyright](https://www.openstreetmap.org/copyright))
+
+
+The following citations should be used to credit AidData for the GCDF v3 data if used (i.e., the underlying project level data). Please note: Both works listed below count as the official citation for the GCDF v3 dataset:
 ```
 Custer, S., Dreher, A., Elston, T.B., Escobar, B., Fedorochko, R., Fuchs, A., Ghose, S., Lin, J., Malik, A., Parks, B.C., Solomon, K., Strange, A., Tierney, M.J., Vlasto, L., Walsh, K., Wang, F., Zaleski, L., and Zhang, S. 2023. Tracking Chinese Development Finance: An Application of AidData’s TUFF 3.0 Methodology. Williamsburg, VA: AidData at William & Mary.
 
 Dreher, A., Fuchs, A., Parks, B. C., Strange, A., & Tierney, M.J. 2022. Banking on Beijing: The Aims and Impacts of China’s Overseas Development Program. Cambridge, UK: Cambridge University Press.
-
 ```
-
-OpenStreetMap may be credited using `© OpenStreetMap contributors` or by linking to their copyright page ([https://www.openstreetmap.org/copyright](https://www.openstreetmap.org/copyright))
 
 
 <br/>
@@ -57,7 +61,7 @@ OpenStreetMap may be credited using `© OpenStreetMap contributors` or by linkin
 
 Whether you have questions about usage, discover a bug, or just want to engage with others using the data, there is a place for you!
 
-[GitHub Discussions](https://github.com/aiddata/china-osm-geodata/discussions) are a great place to ask questions, see what others are talking about, and share research, applications, and ideas. If you'd prefer to get involved in more technical aspects, want to suggest improvements, discover a bug in the code, or run into issues with the data, then please utilize [GitHub's Issues](https://github.com/aiddata/china-osm-geodata/issues).
+[GitHub Discussions](https://github.com/aiddata/gcdf-geospatial-data/discussions) are a great place to ask questions, see what others are talking about, and share research, applications, and ideas. If you'd prefer to get involved in more technical aspects, want to suggest improvements, discover a bug in the code, or run into issues with the data, then please utilize [GitHub's Issues](https://github.com/aiddata/gcdf-geospatial-data/issues).
 
 
 <br/>
@@ -73,7 +77,7 @@ The code in this repository utilizes a combination of webscrapping, APIs, and ge
 
 Python webscrapping is dependent on [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) and [Selenium](https://selenium-python.readthedocs.io/), and access to the OSM Overpass API leverages the [Overpass API Python wrapper](https://github.com/mvexel/overpass-api-python-wrapper). Additional geospatial processing and data management utilizes [Shapely](https://shapely.readthedocs.io/en/stable/manual.html), [osm2geojson](https://github.com/aspectumapp/osm2geojson) (we use a fork of osm2geojson modified for specific issues), and [Pandas](https://pandas.pydata.org/).
 
-Project data prepared using AidData's TUFF (Tracking Underreport Financial Flows) methodology serves an input and contains text descriptions, incuding OSM URLs, of locations associated with Chinese financed projects which are identified by a unique "AidData Tuff Project ID". For each project, OSM URLs are extracted (projects may have zero or multiple OSM URLs) and converted into geospatial features one of multiple approaches, and saved as a GeoJSON. Features described using OSM's [nodes](https://wiki.openstreetmap.org/wiki/Node) or [ways](https://wiki.openstreetmap.org/wiki/Way) - typically points, lines, and simple polygons - are scrapped directly from OSM URLs by extracting coordinates. More complex features such as mulitpolygons represented by OSM's [relations](https://wiki.openstreetmap.org/wiki/Relation)are retrieved using the Overpass API. Finally, OSM URLs containing custom driving directions between two points utilize the Selenium webdriver to extract [SVG path](https://www.w3.org/TR/SVG/paths.html) details from map tiles which are then converted to geospatial features.
+Project data prepared using AidData's TUFF (Tracking Underreport Financial Flows) methodology from the GCDF v3 serves an input and contains text descriptions, incuding OSM URLs, of locations associated with Chinese financed projects which are identified by a unique "AidData Tuff Project ID". For each project, OSM URLs are extracted (projects may have zero or multiple OSM URLs) and converted into geospatial features one of multiple approaches, and saved in a geospatial data format (GeoPackage and GeoJSON). Features described using OSM's [nodes](https://wiki.openstreetmap.org/wiki/Node) or [ways](https://wiki.openstreetmap.org/wiki/Way) - typically points, lines, and simple polygons - are scrapped directly from OSM URLs by extracting coordinates. More complex features such as mulitpolygons represented by OSM's [relations](https://wiki.openstreetmap.org/wiki/Relation) are retrieved using the Overpass API. Finally, OSM URLs containing custom driving directions between two points utilize the Selenium webdriver to extract [SVG path](https://www.w3.org/TR/SVG/paths.html) details from map tiles which are then converted to geospatial features.
 
 While the code developed has considerable error handling built in, it is still possibly to encounter scenarios where APIs are overloaded, web pages are down, or other edge cases that result in errors. Most errors will still be handled to avoid processing failures, and saved in dedicated outputs detailing the projects and error messages involved.
 
@@ -86,8 +90,8 @@ Note: This repository has only been tested on recent Ubuntu based Linux and MacO
 
 Example:
 ```
-git clone git@github.com:aiddata/china-osm-geodata.git
-cd china-osm-geodata
+git clone git@github.com:aiddata/gcdf-geospatial-data.git
+cd gcdf-geospatial-data
 ```
 
 2. Setup Python environment:
@@ -98,8 +102,8 @@ For the easiest setup, we strongly suggest using Conda and following the steps b
 
 
 ```
-conda create -n china_osm python=3.9
-conda activate china_osm
+conda create -n geogcdf python=3.9
+conda activate geogcdf
 conda install -c conda-forge bs4 shapely pandas geopandas selenium==3.141.0 openpyxl conda-build
 pip install overpass
 pip install git+https://github.com/jacobwhall/osm2geojson.git@seth_debug
@@ -114,7 +118,7 @@ Notes:
 - Due to variability in dependency versions that will work across systems (e.g., Linux vs Mac) we suggest using the core_environment to create your build rather than replicating our full test environment. If you do wish to replicate our test environmentally exactly (built for Ubuntu based Linux), you may use the `environment.yml` file instead.
 
 Add the path to where you cloned the repo to your Conda environment:
-`conda develop /path/to/china-osm-geodata`
+`conda develop /path/to/gcdf-geospatial-data`
 
 This may not be necessary, but can potentially prevent connection errors within Prefect:
 `prefect config set PREFECT_API_ENABLE_HTTP2=false`
@@ -169,7 +173,8 @@ Potential issues:
 3. Adjust variables
 
 - Edit the `[main]` section of the  `config.ini` file to modify variables as needed:
-    - `base_directory`: path to your working directory (`/path/to/china-osm-geodata`)
+    - `china-osm-geodata`: Should always be set to True
+    - `base_directory`: path to your working directory (`/path/to/gcdf-geospatial-data`)
     - `active_run_name`: defines which run-specific section of the config.ini file to use.
     - `github_name`: GitHub owner of repo to push output data to
     - `github_repo`: name of GitHub repo to push output data to
@@ -183,25 +188,28 @@ Potential issues:
 - Edit the run-specific section of the  `config.ini` file to modify variables as needed. You may have many run-specific section for different datasets or processing purposes, but the active one must be defined in the `active_run_name` field of the `[main]` config section.
 
     - `release_name`: a unique name that matches the directory within `./input_data` where input data is located, and is also used to create a corresponding directory in `./output_data` for outputs from processing.
+    - `input_file_name`: the basename of the CSV or Excel file from which project level data containing OSM links and other information will be drawn
     - `sample_size` (bool): Number of samples of each OSM type (node, way, relation, directions) to be used for testing. To use all data, set to `-1`.
     - `use_existing_svg` (bool): Whether to use already processed information on OSM "directions" links from a previous run
     - `use_existing_feature` (bool): Whether to use already processed OSM features from a previous run
-    - `from_existing_timestamp`: When either `use_existing_svg` or `use_existing_feature` is set to `True`, this is the timestamp of an existing run from which already processed data will be pulled
+    - `use_existing_raw_osm` (bool): Whether to use raw OSM features retrieved/cached from a previous run
+    - `existing_timestamp`: When either `use_existing_` variables above is set to `True`, this is the timestamp of an existing run from which already processed data will be pulled
     - `use_only_existing` (bool): Intended to be used when rerunning existing data and you do not wish to add any additional data from project files. This may apply when project files are updated, or more commonly when using a sampled subset for consistent testing.
+    - `build_missing_cache` (bool): Whether to retrieve and cache any features not available in the existing cache from a previous run.
     - `prepare_only`: Boolean value indicating whether only the preliminary stage of data preparation will be run. See details in section below for use cases.
-    - `id_field`, `location_field`, `precision_field`, and `osm_str`: These are static variables that should not be changed for replication, yet are made available to support adapting this code for additional datasets in the future. `id_field` is a unique ID field in the input data, `location_field` is the field containing OSM links, `precision_field` described the precision level of the OSM feature relative to the true project feature, and `osm_str` is the string used to identify OSM links.
+    - `id_field`, `location_field`, `precision_field`, `osm_str`, `invalid_str_list`: These are static variables that should not be changed for replication, yet are made available to support adapting this code for additional datasets in the future. `id_field` is a unique ID field in the input data; `location_field` is the field containing OSM links; `precision_field` described the precision level of the OSM feature relative to the true project feature; `osm_str` is the string used to identify OSM links; `invalid_str_list` is a list of strings associated with links that should be omitted from processing.
     - `output_project_fields` (list): the columns from the input data to be included in the output GeoJSONs as feature properties
 
 
 ### Setup Prefect UI and Dask cluster (optional)
 
 1. Review `prefect_dask_setup.sh` and adjust if needed (most will not need to)
-    - Make sure you are currently in your `china-osm-geodata` directory in a terminal
+    - Make sure you are currently in your `gcdf-geospatial-data` directory in a terminal
     - Run `bash prefect_dask_setup.sh`
     - Notes:
-        - If you run into issues when running with Prefect along the lines of `alembic.util.exc.CommandError: Can't locate revision identified by 'e757138e954a'` then you likely need to clear out your existing prefect database and data in `/path/to/china-osm-geodata/.prefect/orion.db`. This is often the result of using different versionf of Prefect on your system.
+        - If you run into issues when running with Prefect along the lines of `alembic.util.exc.CommandError: Can't locate revision identified by 'e757138e954a'` then you likely need to clear out your existing prefect database and data in `/path/to/gcdf-geospatial-data/.prefect/orion.db`. This is often the result of using different versionf of Prefect on your system.
 
 ### Run Code
 
 1. Run the Python script
-    - `python tuff_osm.py`
+    - `python main.py`
