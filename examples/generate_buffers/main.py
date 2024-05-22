@@ -68,7 +68,7 @@ def buffer_data(bs):
             ).geometry.values
     # convert to multipolygon
     buffer_gdf.geometry = buffer_gdf.geometry.apply(
-        lambda x: MultiPolygon([x]) if x.type == "Polygon" else x
+        lambda x: MultiPolygon([x]) if x.geom_type == "Polygon" else x
     )
     # save buffered geometry to file
     buffer_output_path = str(buffer_path_template).replace("BUFFER", str(bs))
