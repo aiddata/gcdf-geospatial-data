@@ -8,12 +8,12 @@ Source: https://towardsdatascience.com/around-the-world-in-80-lines-crossing-the
 """
 
 import json
-from zipfile import ZipFile
 from multiprocessing import Pool
+from zipfile import ZipFile
 
-import pandas as pd
 import geopandas as gpd
-from shapely.geometry import mapping, shape, MultiPolygon
+import pandas as pd
+from shapely.geometry import MultiPolygon, mapping, shape
 
 import polygon_splitter
 
@@ -32,7 +32,9 @@ gdf = gdf.set_crs(epsg=4326)
 
 # optional step: simplify 3 outliers with very large geometries
 big_geoms = [178, 56959, 695]
-gdf.loc[gdf.id.isin(big_geoms), 'geometry'] = gdf.loc[gdf.id.isin(big_geoms), 'geometry'].simplify(0.00001)
+gdf.loc[gdf.id.isin(big_geoms), "geometry"] = gdf.loc[
+    gdf.id.isin(big_geoms), "geometry"
+].simplify(0.00001)
 
 
 # convert to equal area projection for more accurate buffers
@@ -41,7 +43,6 @@ gdf = gdf.to_crs("+proj=eck4 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_de
 # define buffer sizes to generate and format for output paths
 buffer_sizes = [0, 500, 2500, 5000]
 buffer_path_template = "all_combined_global_BUFFERm.gpkg"
-
 
 
 def buffer_data(bs):
@@ -57,19 +58,25 @@ def buffer_data(bs):
     if bs > 5000:
         buffer_gdf = buffer_gdf.loc[~buffer_gdf.id == 64952].copy()
     else:
-        mp_geo = buffer_gdf.loc[buffer_gdf.id == 64952, 'geometry'].iloc[0]
+        mp_geo = buffer_gdf.loc[buffer_gdf.id == 64952, "geometry"].iloc[0]
         if mp_geo.bounds[2] - mp_geo.bounds[0] > 180:
             mp = json.loads(json.dumps(mapping(mp_geo)))
-            z = MultiPolygon([shape(json.loads(i)) for i in polygon_splitter.split_polygon(mp)])
-            buffer_gdf.loc[buffer_gdf.id == 64952, 'geometry'] = gpd.GeoDataFrame(geometry=[z]).geometry.values
+            z = MultiPolygon(
+                [shape(json.loads(i)) for i in polygon_splitter.split_polygon(mp)]
+            )
+            buffer_gdf.loc[buffer_gdf.id == 64952, "geometry"] = gpd.GeoDataFrame(
+                geometry=[z]
+            ).geometry.values
     # convert to multipolygon
-    buffer_gdf.geometry = buffer_gdf.geometry.apply(lambda x: MultiPolygon([x]) if x.type == 'Polygon' else x)
+    buffer_gdf.geometry = buffer_gdf.geometry.apply(
+        lambda x: MultiPolygon([x]) if x.type == "Polygon" else x
+    )
     # save buffered geometry to file
     buffer_output_path = str(buffer_path_template).replace("BUFFER", str(bs))
-    buffer_gdf.to_file(buffer_output_path, driver='GPKG')
+    buffer_gdf.to_file(buffer_output_path, driver="GPKG")
 
 
 # run generation of buffers for each size in parallel
-if __name__ == '__main__':
+if __name__ == "__main__":
     pool = Pool()
     pool.map(buffer_data, buffer_sizes)
