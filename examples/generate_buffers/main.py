@@ -56,7 +56,7 @@ def buffer_data(bs):
     # deal with geom that cross antimeridian
     if bs > 5000:
         buffer_gdf = buffer_gdf.loc[~buffer_gdf.id == 64952].copy()
-    else
+    else:
         mp_geo = buffer_gdf.loc[buffer_gdf.id == 64952, 'geometry'].iloc[0]
         if mp_geo.bounds[2] - mp_geo.bounds[0] > 180:
             mp = json.loads(json.dumps(mapping(mp_geo)))
