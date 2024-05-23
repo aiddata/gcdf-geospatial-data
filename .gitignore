@@ -32,6 +32,7 @@ output_data/gcdf_v3/results/*/osm_geojsons/*
 !output_data/gcdf_v3/results/2023_10_11_11_20/osm_geojsons/cache
 
 latest/*.zip
+latest/*.gpkg
 
 examples/ntl_demo/viirs_ntl
 examples/ntl_demo/viirs_ntl_monthly
