@@ -41,7 +41,7 @@ Please see the [LICENSE file](LICENSE.md) for human-readable summaries of both O
 
 The following citation should be used to credit AidData for the GeoGCDF v3 (i.e., the geospatial features and associated information)
 ```
-Goodman, S., Zhang, S., Malik, A.A., Parks, B.C., Hall, J. 2024. AidData's Geospatial Global Chinese Development Finance Dataset. Scientific Data.
+Goodman, S., Zhang, S., Malik, A.A., Parks, B.C., Hall, J. 2024. AidData's Geospatial Global Chinese Development Finance Dataset. Scientific Data. https://doi.org/10.1038/s41597-024-03341-w
 ```
 
 In addition, use of the geospatial data should credit OpenStreetMap. OpenStreetMap may be credited using `© OpenStreetMap contributors` or by linking to their copyright page ([https://www.openstreetmap.org/copyright](https://www.openstreetmap.org/copyright))
