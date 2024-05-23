@@ -1,5 +1,5 @@
 
-# GCDF v3 Processing steps
+# GCDF v3 Release Processing Steps
 
 
 ## Prepare input data
