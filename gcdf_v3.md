@@ -24,26 +24,28 @@
 
 
 ## Build ADM1 and ADM2 files
-
-`python scripts/adm_lookup.py`
-
-
-## Prepare data to be joined into project level GCDF v3 dataset
-
-`python scripts/generate_project_join.py`
+1. Edit adm lookup timestamp in Python script if needed
+2. Run `python scripts/adm_lookup.py`
 
 
-## Generate Basic Stats
+## Companion products for project-level GCDF release
 
-`python stats/stats.py`
+### Prepare data to be joined into project level GCDF v3 dataset
+
+1. Run `python scripts/generate_project_join.py`
 
 
-## Generate ESG Stats
+### Generate Basic Stats
 
-First run the individual dataset extractions:
+1. Run `python stats/stats.py`
+
+
+### Generate ESG Stats
+
+1. First run the individual dataset extractions:
 `python esg/critical_habitats/extract.py`
 `python esg/protected_areas/extract.py`
 `python esg/indigenous_lands/extract.py`
 `python esg/PLAD/main.py`
-Then combine into a single output:
+2. Then combine into a single output:
 `python esg/gcdf_v3_combine_outputs.py`
