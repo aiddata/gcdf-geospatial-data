@@ -96,28 +96,38 @@ cd gcdf-geospatial-data
 
 2. Setup Python environment:
 
-For the easiest setup, we strongly suggest using Conda and following the steps below.
+For the easiest setup, we strongly suggest using Conda and following the steps for one of the 3 options described below.
+
+Notes before you start:
 - If you do not already have Anaconda/Miniconda installed, please see their [installation guides](https://conda.io/projects/conda/en/latest/user-guide/install/index.html).
 - Using Miniconda instead of the full Anaconda will be significant quicker to download/install.
 
 
-```
-conda create -n geogcdf python=3.9
-conda activate geogcdf
-conda install -c conda-forge bs4 shapely pandas geopandas selenium==3.141.0 openpyxl conda-build
-pip install overpass
-pip install git+https://github.com/jacobwhall/osm2geojson.git@seth_debug
-pip install prefect==2.2.0 prefect-dask==0.1.2 bokeh>=2.1.1
-```
+- Option #1 (exact environment replication)
+    - First run `conda env create -f environment.yml`
+    - This will attempt to exactly replicate the environment we used to build the dataset. The caveat is that this may not always install cleanly on different operating systems. Modern Debian based Linux distributions are most likely to succeed.
+    - Then run `pip install git+https://github.com/jacobwhall/osm2geojson.git@seth_debug`
 
-Notes:
-- The `core_environment.yml` file is available with specific versions of core packages installed by Conda if needed (specific Selenium version specified above).
-    - Use `conda env create -f core_environment.yml` to builds from this file.
-    - You may still need to install packages using pip after creating the environment in some cases.
-- pip was needed to install osm2geojson and prefect in order to get newer/modified versions (may be available through latest conda, but not tested in our build)
-- Due to variability in dependency versions that will work across systems (e.g., Linux vs Mac) we suggest using the core_environment to create your build rather than replicating our full test environment. If you do wish to replicate our test environmentally exactly (built for Ubuntu based Linux), you may use the `environment.yml` file instead.
 
-Add the path to where you cloned the repo to your Conda environment:
+- Option #2 (auto build based on core dependencies)
+    - First run `conda env create -f core_environment.yml`
+    - This will attempt to install only the direct dependencies required and allow additional dependencies to be determined by Conda. This has helped facilitate installs on MacOS systems, but has the potential to result in other dependency conflicts that could need to be resolved (due to the additional dependency choices)
+    - Then run `pip install git+https://github.com/jacobwhall/osm2geojson.git@seth_debug`
+
+- Option #3 (manual build based on core dependencies)
+    - Run
+        ```
+        conda create -n geogcdf python=3.8
+        conda activate geogcdf
+        conda install -c conda-forge bs4 shapely pandas geopandas selenium==4.8.3 openpyxl conda-build
+        pip install overpass
+        pip install git+https://github.com/jacobwhall/osm2geojson.git@seth_debug
+        pip install prefect==2.2.0 prefect-dask==0.1.2 bokeh>=2.1.1
+        ```
+    - This gives you the most step-by-step manual control in case you are running into dependency based installation issues. It is also the most flexible as we limit which packages are explicitly required by version. As a result, there is a greater chance of changes within dependencies resulting in errors running the code or producing slightly different outputs.
+
+
+Finally, add the path to where you cloned the repo to your Conda environment:
 `conda develop /path/to/gcdf-geospatial-data`
 
 This may not be necessary, but can potentially prevent connection errors within Prefect:
