@@ -12,8 +12,9 @@ from multiprocessing import Pool
 from zipfile import ZipFile
 
 import geopandas as gpd
-import pandas as pd
-from shapely.geometry import MultiPolygon, mapping, shape
+import numpy as np
+from shapely import to_geojson
+from shapely.geometry import MultiPolygon, shape
 
 import polygon_splitter
 
@@ -44,6 +45,16 @@ buffer_sizes = [0, 500, 2500, 5000]
 buffer_path_template = "all_combined_global_BUFFERm.gpkg"
 
 
+def fix_antimeridian(geom):
+    # deal with geometries that cross antimeridian
+    return MultiPolygon(
+        [
+            shape(json.loads(i))
+            for i in polygon_splitter.split_polygon(json.loads(to_geojson(geom)))
+        ]
+    )
+
+
 def buffer_data(bs):
     print(bs, "meters")
     # create copy of original dataset to avoid overwriting original geometry
@@ -53,19 +64,12 @@ def buffer_data(bs):
         buffer_gdf.geometry = buffer_gdf.buffer(bs)
     # convert back to wgs84
     buffer_gdf = buffer_gdf.to_crs(epsg=4326)
-    # deal with geom that cross antimeridian
-    if bs > 5000:
-        buffer_gdf = buffer_gdf.loc[~buffer_gdf.id == 64952].copy()
-    else:
-        mp_geo = buffer_gdf.loc[buffer_gdf.id == 64952, "geometry"].iloc[0]
-        if mp_geo.bounds[2] - mp_geo.bounds[0] > 180:
-            mp = json.loads(json.dumps(mapping(mp_geo)))
-            z = MultiPolygon(
-                [shape(json.loads(i)) for i in polygon_splitter.split_polygon(mp)]
-            )
-            buffer_gdf.loc[buffer_gdf.id == 64952, "geometry"] = gpd.GeoDataFrame(
-                geometry=[z]
-            ).geometry.values
+
+    # here's how to find geometries that cross the antimeridian
+    # buffer_gdf[buffer_gdf.geometry.bounds.maxx == np.inf]
+
+    # buffer_gdf[buffer_gdf.geometry.bounds.maxx == np.inf].apply(fix_antimeridian)
+
     # convert to multipolygon
     buffer_gdf.geometry = buffer_gdf.geometry.apply(
         lambda x: MultiPolygon([x]) if x.geom_type == "Polygon" else x
