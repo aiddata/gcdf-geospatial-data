@@ -41,7 +41,7 @@ gdf.loc[gdf.id.isin(big_geoms), "geometry"] = gdf.loc[
 gdf = gdf.to_crs("+proj=eck4 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs")
 
 # define buffer sizes to generate and format for output paths
-buffer_sizes = [0, 500, 2500, 5000]
+buffer_sizes = [0, 500, 2500, 5000, 10000]
 buffer_path_template = "all_combined_global_BUFFERm.gpkg"
 
 
