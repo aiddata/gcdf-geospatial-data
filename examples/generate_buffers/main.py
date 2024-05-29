@@ -68,6 +68,10 @@ def buffer_data(bs):
     # here's how to find geometries that cross the antimeridian
     # buffer_gdf[buffer_gdf.geometry.bounds.maxx == np.inf]
 
+    buffer_gdf = buffer_gdf[buffer_gdf.id != 40451]
+    buffer_gdf = buffer_gdf[buffer_gdf.id != 90779]
+    buffer_gdf = buffer_gdf[buffer_gdf.id != 64952]
+
     # buffer_gdf[buffer_gdf.geometry.bounds.maxx == np.inf].apply(fix_antimeridian)
 
     # convert to multipolygon
