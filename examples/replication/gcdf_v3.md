@@ -1,6 +1,8 @@
 
 # GCDF v3 Release Processing Steps
 
+In this readme we provide detail the specific steps for rebuilding the GeoGCDF dataset, as well as accompanying products created during the build pipeline. If you have not already setup your environment and configuration settings, be sure to read the [overview readme](overview.md) first.
+
 
 ## Prepare input data
 `python input_data/gcdf_v3/gcdf_v3_prep.py`

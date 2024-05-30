@@ -1,7 +1,7 @@
 
 ## Replication
 
-In this readme we provide an overview of the generalized steps necessary to run the complete workflow. This included environmental setup, defining configuration settings, and other operational considerations. Once you have read this readme, if you wish to replicate the GeoGCDF v3 dataset be sure to read the [gcdf_v3.md readme](examples/replication/gcdf_v3.md).
+In this readme we provide an overview of the generalized steps necessary to run the complete workflow. This included environmental setup, defining configuration settings, and other operational considerations. Once you have read this readme, if you wish to replicate the GeoGCDF v3 dataset be sure to read the [gcdf_v3.md readme](gcdf_v3.md).
 
 
 ### Technical Overview
