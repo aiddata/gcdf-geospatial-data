@@ -1,15 +1,15 @@
 # AidData's Geospatial Global Chinese Development Dataset -- v3.0
 
 
-Welcome to the GitHub repository for [AidData's](https://www.aiddata.org/) Geospatial Global Chinese Development Finance Dataset (GeoGCDF)! The GeoGCDF provides geospatial features that expand the type of analysis which can be conducted using project level data from AidData's Global Chinese Development Finance Dataset (GCDF).
+Welcome to the GitHub repository for [AidData's](https://www.aiddata.org/) Geospatial Global Chinese Development Finance Dataset (GeoGCDF)! The GeoGCDF provides geospatial features defining the location of Chinese financed projects, and expands the type of analysis which can be conducted using the tabular, project level data from AidData's Global Chinese Development Finance Dataset (GCDF).
 
 Please also visit AidData's [dedicated page for work related to China](https://www.aiddata.org/china), where you can find blog posts, announcements, and more.
 
 
 This repository allows you to:
-1. Download the GeoGCDF dataset, including the geospatial features extracted from [OpenStreetMap (OSM)](https://www.openstreetmap.org/)
-2. Explore examples, guidelines, other material related to using the geospatial features
-3. Access the code used to extract and process geospatial features from OSM in order to replicate the dataset
+1. Download the complete GeoGCDF dataset, including ready-to-use geospatial features.
+2. Explore examples, guidelines, other material related to using the GeoGCDF and geospatial features.
+3. Access the code used to extract and process geospatial features from OSM in order to replicate the GeoGCDF or create your own dataset.
 
 
 <br/>
@@ -27,10 +27,10 @@ This repository allows you to:
 
 The 3.0 version of AidData’s _Global Chinese Development Finance Dataset_ (__GCDF v3__) records the known universe of projects supported by official financial and in-kind commitments (or pledges) from China between 2000 and 2021. The Geospatial Global Chinese Development Finance Dataset, Version 3.0 (__GeoGCDF v3__) detailed in this repository captures the geospatial features of 9,405 projects across 148 low- and middle-income countries supported by Chinese grant and loan commitments worth more than USD 830 billion. The dataset provides details of 6,266 projects containing spatial definitions of roads, railways, power plants, transmission lines, buildings, and other precisely geocoded features. It identifies approximate and administrative-level locations for 3,139 additional projects.
 
-Geographic features associated with the location of project activities were identifed through OpenStreetMap. Projects for which OSM features are available are labeled in the main dataset and can be linked with geospatial data from this GitHub repository, or used directly from the data provided here. Geospatial data is available in bulk as a [GeoPackage](https://www.geopackage.org/) available with each [Release](https://github.com/aiddata/gcdf-geospatial-data/releases/latest) or as individual [GeoJSONs](https://geojson.org/) saved in the [latest/geojsons](latest/geojsons) folder (with one GeoJSON per project named according to the project ID). For example, Project 35756 can be viewed via [latest/geojsons/35756.geojson](latest/geojsons/35756.geojson).
+Geographic features associated with the location of project activities were identifed through [OpenStreetMap (OSM)](https://www.openstreetmap.org/). Projects for which OSM features are available are labeled in the main dataset and can be linked with geospatial data from this GitHub repository, or used directly from the data provided here. Geospatial data is available in bulk as a [GeoPackage](https://www.geopackage.org/) available with each [Release](https://github.com/aiddata/gcdf-geospatial-data/releases/latest) or as individual [GeoJSONs](https://geojson.org/) saved in the [latest/geojsons](latest/geojsons) folder (with one GeoJSON per project named according to the project ID). For example, Project 35756 can be viewed via [latest/geojsons/35756.geojson](latest/geojsons/35756.geojson).
 
 
-Examples, guides, best practices, and other material related to utilizing the geospatial data can be found in the [Examples](examples) folder. For information on using the core datset and project data, please explore the tabs of the official dataset (see download link for the latest data above).
+Examples, guides, best practices, and other material related to utilizing the geospatial data in the GeoGCDF can be found in the [Examples](examples) folder. For information on using the project data, please explore the tabs of the GCDF dataset (see download link for the latest GCDF dataset above).
 
 
 
