@@ -1,7 +1,7 @@
 # AidData's Geospatial Global Chinese Development Dataset -- v3.0
 
 
-Welcome to the GitHub repository for [AidData's](https://www.aiddata.org/) Geospatial Global Chinese Development Finance Dataset (GeoGCDF)! The GeoGCDF provides geospatial features defining the location of Chinese financed projects, and expands the type of analysis which can be conducted using the tabular, project level data from AidData's Global Chinese Development Finance Dataset (GCDF).
+Welcome to the GitHub repository for [AidData's](https://www.aiddata.org/) Geospatial Global Chinese Development Finance Dataset (GeoGCDF)! The GeoGCDF provides [geospatial features](examples/features_intro) defining the location of Chinese financed projects, and expands the type of analysis which can be conducted using the tabular, project level data from AidData's Global Chinese Development Finance Dataset (GCDF).
 
 Please also visit AidData's [dedicated page for work related to China](https://www.aiddata.org/china), where you can find blog posts, announcements, and more.
 
