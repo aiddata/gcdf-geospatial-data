@@ -1,3 +1,4 @@
+# generic items to always ignore
 stdoe
 *_osm.o*
 chrome*
@@ -9,32 +10,46 @@ __pycache__
 dask-worker-space/
 archive/
 previous/
+*.qmd
 
+# geoboundaries data
 gb_v5/
 gb_v6/*.gpkg
+
+# china report stats
 stats/
 esg/
 
+# high income country test
 gb_v6/his_precise_*
 output_data/his_precise
 scripts/hisprecise_adm_lookup.py
 
-input_data/
+# input data (allow final input data for releases)
+input_data/*
 !input_data/2.0release
-# !input_data/gcdf_v3
+!input_data/gcdf_v3
+input_data/gcdf_v3/*
+!input_data/gcdf_v3/final_input.csv
 
+# output data (allow osm cache for releases)
 output_data/*.*
 output_data/3.0*
 output_data/mining_test
 output_data/gcdf_v3/results/*/*.*
 output_data/gcdf_v3/results/*/geojsons
 output_data/gcdf_v3/results/*/osm_geojsons/*
-!output_data/gcdf_v3/results/2023_10_11_11_20/osm_geojsons/cache
+# release v3.0.0
+!output_data/gcdf_v3/results/2024_05_21_13_15/osm_geojsons/cache
+# release v3.0.1
+!output_data/gcdf_v3/results/2024_05_21_13_15/osm_geojsons/cache
 
+# latest data files that are too big to push to repo (some will be attached to releases manually)
 latest/*.zip
+latest/*.gpkg
 
+# example input/output data too big for repo
 examples/ntl_demo/viirs_ntl
 examples/ntl_demo/viirs_ntl_monthly
 examples/generate_buffers/*.geojson
 examples/rasterize/rasters
-*.qmd

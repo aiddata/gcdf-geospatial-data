@@ -13,12 +13,12 @@ dry_run = False
 intersection_threshold = 0.01
 
 output_tag = "gcdf_v3"
-output_timestamp = "2023_10_18_09_35"
+output_timestamp = "2023_12_04_13_25"
 dataset_path = f"/home/userx/Desktop/tuff_osm/output_data/gcdf_v3/results/{output_timestamp}/all_combined_global.gpkg"
 
 
 # project_data_path = "/home/userx/Desktop/tuff_osm/input_data/gcdf_v3/cdf2021.csv"
-value_field = "Amount.(Constant.USD2021)"
+value_field = "Amount.(Constant.USD.2021)"
 # id_field = "AidData Tuff Project ID"
 
 # geo_gdf = gpd.read_file(dataset_path)
@@ -28,7 +28,22 @@ value_field = "Amount.(Constant.USD2021)"
 # china_gdf = geo_gdf.merge(project_df, left_on="id", right_on=id_field, how="left")
 
 raw_china_gdf = gpd.read_file(dataset_path)
-raw_china_gdf.osm_precision_list = raw_china_gdf.osm_precision_list.apply(lambda x: list(set(ast.literal_eval(x))))
+
+def build_list_from_string(x):
+    try:
+        # return list(set(ast.literal_eval(x)))
+        print(x)
+        print(list(set(x.split(","))))
+        print("---")
+        return list(set(x.split(",")))
+    except:
+        print(x, type(x))
+        raise
+
+raw_china_gdf.osm_precision_list = raw_china_gdf.osm_precision_list.apply(lambda x: build_list_from_string(x))
+
+
+
 
 # =====================================
 # init and download adm data if needed
