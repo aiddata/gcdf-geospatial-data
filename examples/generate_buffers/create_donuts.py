@@ -8,7 +8,6 @@ expects you to be in the same directory as the buffered files
 import geopandas as gpd
 from shapely.geometry import MultiPolygon
 
-
 buffer_path_template = "all_combined_global_BUFFERm.gpkg"
 
 outer_buffer_size = 10000
@@ -21,7 +20,7 @@ outer_buffer_gdf = gpd.read_file(outer_buffer_path)
 inner_buffer_gdf = gpd.read_file(inner_buffer_path)
 
 
-donut_gdf = outer_buffer_gdf.merge(inner_buffer_gdf[['id', 'geometry']], on='id')
+donut_gdf = outer_buffer_gdf.merge(inner_buffer_gdf[["id", "geometry"]], on="id")
 
 
 def difference(outer, inner):
@@ -40,9 +39,11 @@ def difference(outer, inner):
     return donut
 
 
-donut_gdf['geometry'] = donut_gdf.apply(lambda x: difference(x['geometry_x'], x['geometry_y']), axis=1)
+donut_gdf["geometry"] = donut_gdf.apply(
+    lambda x: difference(x["geometry_x"], x["geometry_y"]), axis=1
+)
 
-output_gdf = gpd.GeoDataFrame(donut_gdf.drop(columns=['geometry_x', 'geometry_y']))
+output_gdf = gpd.GeoDataFrame(donut_gdf.drop(columns=["geometry_x", "geometry_y"]))
 
 output_path = f"{outer_buffer_size}m_{inner_buffer_size}m_donut.gpkg"
 output_gdf.to_file(output_path, driver="GPKG")
