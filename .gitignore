@@ -26,11 +26,11 @@ output_data/his_precise
 scripts/hisprecise_adm_lookup.py
 
 # input data (allow final input data for releases)
-input_data/
+input_data/*
 !input_data/2.0release
-# !input_data/gcdf_v3
-# !input_data/gcdf_v3/final_input.csv
-# input_data/gcdf_v3/*
+!input_data/gcdf_v3
+input_data/gcdf_v3/*
+!input_data/gcdf_v3/final_input.csv
 
 # output data (allow osm cache for releases)
 output_data/*.*
