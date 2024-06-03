@@ -19,10 +19,18 @@ In this readme we provide detail the specific steps for rebuilding the GeoGCDF d
 4. Upload the `all_combined_global.gpkg.zip` and `osm_geojsons/OSM_grouped.zip` files to the release assets
 
 ### To publish an official release:
-1. Create a PR on GitHub from the development repo to the production repo (gcdf-geospatial-data)
-2. Merge the PR
-3. Create a new release in the production GitHub repo
-4. Upload the `all_combined_global.gpkg.zip` and `osm_geojsons/OSM_grouped.zip` files to the release assets
+1. Set the production repo (gcdf-geospatial-data) as an upstream (e.g., "live") of your release candidate repo (gcdf-geospatial-data-rc) (e.g., "origin")
+2. Create a new branch in the production repo (e.g., "v301rc") from the main branch
+3. Push the release candidate repo code to new production branch
+    ```
+    git fetch live
+    git checkout -b live/v301rc
+    git push live HEAD:v301rc
+    ```
+4. Create a PR in the production repo from the new branch to the main branch
+5. Merge the PR
+6. Create a new release in the production GitHub repo for the main branch
+7. Upload the `all_combined_global.gpkg.zip` and `osm_geojsons/OSM_grouped.zip` files to the release assets
 
 
 ## Build ADM1 and ADM2 files
