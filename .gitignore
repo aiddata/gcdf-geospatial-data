@@ -11,6 +11,8 @@ dask-worker-space/
 archive/
 previous/
 *.qmd
+*.gpkg-shm
+*.gpkg-wal
 
 # geoboundaries data
 gb_v5/
