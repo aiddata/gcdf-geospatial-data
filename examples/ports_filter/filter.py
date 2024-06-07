@@ -17,7 +17,7 @@ base_path = Path("/home/userx/Desktop/tuff_osm/examples/ports_filter")
 
 
 # =================================================================================================
-# prep geocoded data for malaysia
+# prep geocoded data
 
 gcdf_path = base_path.parent.parent / "latest/all_combined_global.gpkg"
 
@@ -57,17 +57,16 @@ port_gdf["precise"] = port_gdf["osm_precision_list"].apply(lambda x: "precise" i
 port_gdf["approximate"] = port_gdf["osm_precision_list"].apply(lambda x: "approximate" in x)
 port_gdf["adm"] = port_gdf["osm_precision_list"].apply(lambda x: "adm" in x)
 
-port_gdf.to_file(base_path / "ports.gpkg", driver="GPKG")
+port_gdf.to_file(base_path / "related.gpkg", driver="GPKG")
 
-precise_gdf = port_gdf.loc[~port_gdf.adm].copy()
-precise_gdf.to_file(base_path / "precise.gpkg", driver="GPKG")
-
-high_value_gdf = port_gdf[port_gdf["Amount.(Constant.USD.2021)"] > 1e6].copy()
-high_value_gdf.to_file(base_path / "high_value.gpkg", driver="GPKG")
+# manually select relevant projects
+relevant_id_list = [89653, 85355, 69333, 73745, 54912, 43110, 41465]
+manual_gdf = port_gdf.loc[port_gdf.id.isin(relevant_id_list)].copy()
+manual_gdf.to_file(base_path / "specific.gpkg", driver="GPKG")
 
 
 # =================================================================================================
-# prep project level data for malaysia
+# prep project level data
 
 # download project level data
 zip_url = "https://docs.aiddata.org/ad4/datasets/AidDatas_Global_Chinese_Development_Finance_Dataset_Version_3_0.zip"

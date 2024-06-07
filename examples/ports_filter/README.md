@@ -7,14 +7,11 @@ Projects were limited to Central/South America based on a simple longitude filte
 
 ## Data
 
-### Port related geocoded data
-See `ports.gpkg`. 20 total projects related to ports were found in the GeoGCDF v3.
+### All port related geocoded data
+See `related.gpkg`. 20 total projects related to ports based on automated keyword search were found in the GeoGCDF v3.
 
 ### Precise Geocoded Data
-See `precise.gpkg`. Contains 20 projects geocoded with precise/approximate locations (0 projects were geocoded with admin boundaries)
-
-### High Value Geocoded Data
-See `high_value.gpkg`. Contains 16 geocoded projects with value > 1 million USD2021.
+See `specific.gpkg`. Contains 7 projects were identified after manual review as associated with port construction.
 
 ### Project data
 See `project_level_data/projects.csv`. Contains related subset of project level data from the GCDF v3.
